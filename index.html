@@ -1,236 +1,519 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>6학년 5반 키우기 (Realtime Cloud)</title>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<!DOCTYPE html> 
+<html lang="ko"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <title>6학년 5반 키우기 (Cloud Sync)</title> 
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script> 
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script> 
     
-    <style>
-        :root { --main-blue: #4a90e2; --admin-red: #e74c3c; --gold: #f1c40f; --green: #2ecc71; --purple: #9b59b6; --dark: #34495e; --notice-bg: #fff9db; }
-        body { font-family: 'Pretendard', sans-serif; background: #f0f4f8; margin: 0; padding: 20px; }
-        .main-wrapper { display: flex; gap: 20px; max-width: 1450px; margin: auto; align-items: flex-start; }
-        .content-area { flex: 1; min-width: 0; }
-        .ranking-side { width: 260px; background: white; padding: 15px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: sticky; top: 20px; }
-        .ranking-section { margin-bottom: 25px; }
-        .ranking-title { font-weight: bold; color: var(--dark); border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 10px; text-align: center; }
-        .rank-item { display: flex; align-items: center; padding: 5px 0; border-bottom: 1px solid #f9f9f9; font-size: 0.9rem; }
-        .rank-num { width: 25px; font-weight: 800; color: #888; }
-        .rank-name { flex: 1; font-weight: 600; }
-        .rank-score { font-weight: bold; color: var(--purple); }
-        .header-stats { background: white; padding: 25px; border-radius: 20px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; }
-        .total-donation-box { font-size: 1.4rem; color: var(--green); font-weight: bold; margin-bottom: 15px; }
-        .admin-top-group { position: absolute; top: 15px; right: 20px; display: flex; gap: 8px; }
-        #mainAdminLoginBtn { background: #eee; color: #888; border: 1px solid #ddd; padding: 4px 8px; border-radius: 5px; cursor: pointer; font-size: 10px; }
-        .notice-container { background: var(--notice-bg); border: 2px solid #fab005; border-radius: 12px; padding: 15px; margin: 15px auto; max-width: 800px; }
-        .notice-content { font-size: 1.05rem; color: #444; white-space: pre-wrap; min-height: 50px; outline: none; }
-        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 15px; }
-        .student-card { background: white; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.2s; border: 1px solid #eee; }
-        .student-card:hover { border-color: var(--main-blue); transform: translateY(-3px); }
-        .teacher-card { border: 3px solid var(--purple) !important; background: #fdfaff !important; }
-        .gold-card { border: 3px solid var(--gold) !important; background: #fffdf5 !important; }
-        #detailPage, #shopPage { display: none; max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .btn-blue { background: var(--main-blue); color: white; }
-        .item-card { border: 1px solid #eee; padding: 12px; border-radius: 12px; text-align: center; }
-    </style>
-</head>
-<body>
+    <style> 
+        /* CSS 스타일링 */ 
+        :root { --main-blue: #4a90e2; --admin-red: #e74c3c; --gold: #f1c40f; --green: #2ecc71; --purple: #9b59b6; --dark: #34495e; --notice-bg: #fff9db; } 
+        body { font-family: 'Pretendard', sans-serif; background: #f0f4f8; margin: 0; padding: 20px; } 
+        .main-wrapper { display: flex; gap: 20px; max-width: 1450px; margin: auto; align-items: flex-start; } 
+        .content-area { flex: 1; min-width: 0; } 
+        .ranking-side { width: 260px; background: white; padding: 15px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: sticky; top: 20px; } 
+        .ranking-section { margin-bottom: 25px; } 
+        .ranking-title { font-weight: bold; color: var(--dark); border-bottom: 2px solid #eee; padding-bottom: 8px; margin-bottom: 10px; text-align: center; font-size: 1rem; } 
+        .ranking-title.donation { color: var(--green); border-bottom-color: #d3f9d8; } 
+        .rank-item { display: flex; align-items: center; padding: 5px 0; border-bottom: 1px solid #f9f9f9; font-size: 0.85rem; line-height: 1.2; } 
+        .rank-num { width: 25px; font-weight: 800; color: #888; font-size: 0.8rem; } 
+        .rank-name { flex: 1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 5px; } 
+        .rank-score { font-weight: bold; color: var(--purple); font-size: 0.8rem; } 
+        .rank-score.don { color: var(--green); } 
+        .rank-1 .rank-num { color: #d4af37; } 
+        .header-stats { background: white; padding: 25px; border-radius: 20px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; } 
+        .total-donation-box { font-size: 1.4rem; color: var(--green); font-weight: bold; margin-bottom: 15px; } 
+        .admin-top-group { position: absolute; top: 15px; right: 20px; display: flex; gap: 8px; } 
+        #mainAdminLoginBtn, #adminResetBtn { background: #eee; color: #888; border: 1px solid #ddd; padding: 4px 8px; border-radius: 5px; cursor: pointer; font-size: 10px; } 
+        #mainAdminLoginBtn.active { background: var(--admin-red); color: white; border: none; } 
+        .notice-container { background: var(--notice-bg); border: 2px solid #fab005; border-radius: 12px; padding: 15px; margin: 15px auto; max-width: 800px; transition: 0.3s; } 
+        .notice-container.admin-edit-mode { background: #fff; border-style: dashed; border-color: var(--admin-red); box-shadow: 0 0 10px rgba(231, 76, 60, 0.2); } 
+        .notice-title { font-weight: bold; color: #f08c00; margin-bottom: 8px; font-size: 1.1rem; display: flex; justify-content: space-between; } 
+        .edit-badge { font-size: 10px; background: var(--admin-red); color: white; padding: 2px 6px; border-radius: 4px; display: none; } 
+        .notice-content { font-size: 1.05rem; color: #444; white-space: pre-wrap; line-height: 1.5; min-height: 50px; outline: none; } 
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 15px; } 
+        .student-card { background: white; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.2s; border: 1px solid #eee; position: relative; min-height: 160px; display: flex; flex-direction: column; justify-content: center; } 
+        .student-card:hover { border-color: var(--main-blue); box-shadow: 0 8px 15px rgba(0,0,0,0.1); } 
+        .teacher-card { border: 3px solid var(--purple) !important; background: #fdfaff !important; } 
+        .gold-card { border: 3px solid var(--gold) !important; background: #fffdf5 !important; box-shadow: 0 0 15px rgba(241, 196, 15, 0.2); } 
+        .card-titles { margin: 8px 0; min-height: 25px; display: flex; justify-content: center; flex-wrap: wrap; gap: 3px; } 
+        .card-money { font-size: 0.95rem; color: #d35400; font-weight: bold; margin-bottom: 5px; } 
+        .personal-stat-sum { font-size: 0.7rem; color: #555; background: #eef5ff; padding: 2px 8px; border-radius: 20px; font-weight: 600; } 
+        .edit-area { margin-top: 10px; display: none; justify-content: center; gap: 8px; } 
+        .student-card:hover .edit-area { display: flex; } 
+        .edit-btn { font-size: 10px; color: #aaa; text-decoration: underline; cursor: pointer; } 
+        .edit-btn:hover { color: var(--admin-red); } 
+        .admin-shop-manager { display: none; margin-top: 30px; background: #fff; padding: 25px; border-radius: 20px; border: 2px solid var(--admin-red); } 
+        .admin-shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 15px; } 
+        .admin-item-card { border: 1px solid #eee; padding: 10px; border-radius: 10px; font-size: 12px; } 
+        .admin-item-card input { width: 60px; padding: 3px; } 
+        .off-item { opacity: 0.5; background: #f9f9f9; } 
+        #detailPage, #shopPage { display: none; max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); } 
+        .medal-shelf { display: flex; flex-wrap: wrap; gap: 10px; background: #f9f9f9; padding: 15px; border-radius: 15px; border: 2px inset #eee; min-height: 50px; margin-bottom: 20px; } 
+        .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; } 
+        .btn-blue { background: var(--main-blue); color: white; } 
+        .item-card { border: 1px solid #eee; padding: 12px; border-radius: 12px; text-align: center; } 
+        .item-card.sold-out { opacity: 0.5; filter: grayscale(1); pointer-events: none; } 
+        .stat-admin-btn { padding: 2px 6px; font-size: 12px; cursor: pointer; background: #fff; border: 1px solid #ddd; border-radius: 4px; } 
+    </style> 
+</head> 
+<body> 
 
-    <div id="mainPage">
-        <div class="main-wrapper">
-            <div class="content-area">
-                <div class="header-stats">
-                    <div class="admin-top-group">
-                        <button id="mainAdminLoginBtn" onclick="toggleAdmin()">🔒 관리자 로그인</button>
-                    </div>
-                    <h1>🏫 6학년 5반 키우기</h1>
-                    <div class="total-donation-box">🌟 누적 기부액: <span id="totalDonationDisplay">0</span>원</div>
-                    <div id="noticeBox" class="notice-container">
-                        <div style="font-weight:bold; color:#f08c00; margin-bottom:8px;">📢 알림장</div>
-                        <div id="noticeContent" class="notice-content" oninput="saveNotice()"></div>
-                    </div>
-                </div>
-                <div id="studentGrid" class="grid-container"></div>
-            </div>
-            <div class="ranking-side">
-                <div class="ranking-section">
-                    <div class="ranking-title">🏆 능력치 TOP 10</div>
-                    <div id="statRankList"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div id="mainPage"> 
+        <div class="main-wrapper"> 
+            <div class="content-area"> 
+                <div class="header-stats"> 
+                    <div class="admin-top-group"> 
+                        <button id="mainAdminLoginBtn" onclick="toggleAdmin()">🔒 관리자 로그인</button> 
+                        <button id="adminResetBtn" onclick="resetAllData()">⚠️ 전체 초기화</button> 
+                    </div> 
+                    <h1>🏫 6학년 5반 키우기</h1> 
+                    <div class="total-donation-box">🌟 우리 반 누적 기부액: <span id="totalDonationDisplay">0</span>원</div> 
+                    
+                    <div id="noticeBox" class="notice-container"> 
+                        <div class="notice-title"> 
+                            <span>📢 알림장 & 선생님의 한마디</span> 
+                            <span id="editBadge" class="edit-badge">실시간 편집 중...</span> 
+                        </div> 
+                        <div id="noticeContent" class="notice-content" oninput="saveData()"></div> 
+                    </div> 
+                </div> 
+                <div id="studentGrid" class="grid-container"></div> 
+                <div id="adminShopPanel" class="admin-shop-manager"> 
+                    <h2 style="color:var(--admin-red); margin-top:0;">🛠️ 상점 실시간 관리</h2> 
+                    <div class="admin-shop-grid" id="adminShopGrid"></div> 
+                </div> 
+            </div> 
+            <div class="ranking-side"> 
+                <div class="ranking-section"> 
+                    <div class="ranking-title">🏆 능력치 TOP 10</div> 
+                    <div id="statRankList"></div> 
+                </div> 
+                <div class="ranking-section"> 
+                    <div class="ranking-title donation">🕊️ 기부천사 TOP 10</div> 
+                    <div id="donationRankList"></div> 
+                </div> 
+            </div> 
+        </div> 
+    </div> 
 
-    <div id="detailPage">
-        <button class="btn" onclick="showMain()">← 전체 명단</button>
-        <h2 id="viewName">이름</h2>
-        <div style="display: flex; gap: 40px;">
-            <div style="width: 250px;">
-                <h4>💰 잔액: <span id="viewMoney">0</span>원</h4>
-                <button class="btn btn-blue" style="width:100%" onclick="showShop()">🛒 상점 방문</button>
-                <button class="btn" style="width:100%; margin-top:10px; background:var(--green); color:white;" onclick="donateMoney()">❤️ 기부하기</button>
-            </div>
-            <div style="flex: 1;">
-                <h3>📊 능력치</h3>
-                <div id="statList"></div>
-                <div id="adminPanel" style="display:none; background:#fff5f5; padding:15px; border-radius:10px; margin-top:15px;">
-                    <strong style="color:var(--admin-red)">🛠 관리자 도구</strong><br>
-                    <input type="number" id="moneyInput" placeholder="금액" style="width:80px;">
-                    <button onclick="updateMoney(1)">지급</button>
-                    <button onclick="updateMoney(-1)">차감</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <div id="detailPage"> 
+        <button class="btn" onclick="showMain()">← 전체 명단</button> 
+        <h2 id="viewName">이름</h2> 
+        <div style="display: flex; gap: 40px;"> 
+            <div style="width: 250px; text-align: center;"> 
+                <h4>🏆 획득한 칭호</h4> 
+                <div class="medal-shelf" id="myMedals"></div> 
+                <button class="btn btn-blue" style="width:100%" onclick="showShop()">🛒 상점 방문</button> 
+                <button class="btn" style="width:100%; margin-top:10px; background:var(--green); color:white;" onclick="donateMoney()">❤️ 기부하기</button> 
+            </div> 
+            <div style="flex: 1;"> 
+                <h3 style="margin:0;">💰 잔액: <span id="viewMoney">0</span>원</h3> 
+                <h4 style="margin:8px 0; color:var(--green)">🕊️ 나의 기부: <span id="viewMyDonation">0</span>원</h4> 
+                <hr> 
+                <h3>📊 능력치</h3> 
+                <div id="statList"></div> 
+                <div id="adminPanel" style="display:none; background:#fff5f5; padding:15px; border-radius:10px; margin-top:15px; border: 1px solid #ffcfcf;"> 
+                    <div style="margin-bottom:15px;"><strong style="color:var(--admin-red)">🛠 돈 조정</strong><br> 
+                        <input type="number" id="moneyInput" style="width:80px; padding:5px;"> 원 
+                        <button class="btn btn-blue" onclick="updateMoney(1)">지급</button> 
+                        <button class="btn" style="background:var(--admin-red); color:white;" onclick="updateMoney(-1)">차감</button> 
+                    </div> 
+                    <div id="adminStatControls"></div> 
+                    <div style="margin-top:15px;"><strong style="color:var(--admin-red)">🔑 비번 관리</strong><br> 
+                        <input type="text" id="newStudentPw" style="width:120px; padding:5px;"> 
+                        <button class="btn" style="background:var(--dark); color:white; padding:5px 10px;" onclick="resetStudentPw()">재설정</button> 
+                    </div> 
+                </div> 
+            </div> 
+        </div> 
+    </div> 
 
-    <div id="shopPage">
-        <button class="btn" onclick="closeShop()">← 뒤로가기</button>
-        <h3>🛒 상점</h3>
-        <div id="shopGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;"></div>
-    </div>
+    <div id="shopPage"> 
+        <button class="btn" onclick="closeShop()">← 뒤로가기</button> 
+        <h3 style="border-left:5px solid var(--main-blue); padding-left:10px; margin: 25px 0;">🎖️ 칭호 상점</h3> 
+        <div id="titleShopGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;"></div> 
+        <h3 style="border-left:5px solid var(--purple); padding-left:10px; margin: 40px 0 25px;">🧪 포션 상점</h3> 
+        <div id="potionShopGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;"></div> 
+    </div> 
 
-    <script>
-        // 1. Firebase 초기화
-        const firebaseConfig = {
-            apiKey: "AIzaSyCqE1dKLYBjVnJFtnet7I4NKyKUAma3dgY",
-            authDomain: "class6-5-5faf8.firebaseapp.com",
-            databaseURL: "https://class6-5-5faf8-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "class6-5-5faf8",
-            storageBucket: "class6-5-5faf8.firebasestorage.app",
-            messagingSenderId: "178537841758",
-            appId: "1:178537841758:web:e4cd2fb886d1685900e0cf"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+    <script> 
+        // 1. Firebase 설정
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCqE1dKLYBjVnJFtnet7I4NKyKUAma3dgY", 
+            authDomain: "class6-5-5faf8.firebaseapp.com", 
+            databaseURL: "https://class6-5-5faf8-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            projectId: "class6-5-5faf8", 
+            storageBucket: "class6-5-5faf8.firebasestorage.app", 
+            messagingSenderId: "178537841758", 
+            appId: "1:178537841758:web:e4cd2fb886d1685900e0cf", 
+            measurementId: "G-FW1MKVBY5P" 
+        }; 
+        
+        firebase.initializeApp(firebaseConfig); 
+        const db = firebase.database(); 
 
-        let isAdmin = false;
-        let currentIdx = null;
-        let students = [];
+        // 2. 변수 및 초기 데이터 
+        let isAdmin = false; 
+        const ADMIN_PW = "tpfbsch0605@#"; 
+        let currentIdx = null; 
+        let students = []; 
+        let top3Ids = []; 
+        let titleData = []; 
+        let potionData = []; 
+        let noticeText = ""; 
 
-        // 2. 실시간 데이터 불러오기
-        function initSync() {
-            db.ref('classData').on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    students = data.students || [];
-                    if (!isAdmin) document.getElementById('noticeContent').innerText = data.notice || "";
-                    renderGrid();
-                    if (currentIdx !== null) updateUI();
-                } else {
-                    resetData();
+        const defaultTitles = [ 
+            { id: 't1', name: '6학년을 시작하는 자', icon: '🌱', price: 1000, effect: '모든 능력치 +1', onSale: true }, 
+            { id: 't2', name: '6학년을 조금 아는 자', icon: '🌿', price: 5000, effect: '모든 능력치 +5', onSale: true }, 
+            { id: 't3', name: '6학년을 지배하는 자', icon: '🌳', price: 20000, effect: '모든 능력치 +10', onSale: true }, 
+            { id: 't10', name: '재력과시', icon: '💎', price: 30000, effect: '모든 능력치 +20', onSale: true }, 
+            { id: 't4', name: '6학년 5반의 군주', icon: '👑', price: 999999, effect: '모든 능력치 100 달성', onSale: true }, 
+            { id: 't5', name: '공부왕', icon: '📖', price: 3000, effect: '지력 +10', onSale: true }, 
+            { id: 't6', name: '운동왕', icon: '⚽', price: 3000, effect: '체력 +10', onSale: true }, 
+            { id: 't7', name: '창의왕', icon: '💡', price: 3000, effect: '창의성 +10', onSale: true }, 
+            { id: 't8', name: '멘탈왕', icon: '📝', price: 3000, effect: '정신력 +10', onSale: true }, 
+            { id: 't9', name: '도움왕', icon: '🤝', price: 3000, effect: '인성 +10', onSale: true },
+            // 신규 자동 획득 칭호 8선 (상점에는 노출되지 않도록 onSale: false 설정)
+            { id: 's1', name: '힘의 수호자', icon: '🛡️', price: 0, effect: '체력 +10', onSale: false, isAuto: true },
+            { id: 's2', name: '지혜의 수호자', icon: '🔮', price: 0, effect: '지력 +10', onSale: false, isAuto: true },
+            { id: 's3', name: '재치의 수호자', icon: '🎭', price: 0, effect: '창의성 +10', onSale: false, isAuto: true },
+            { id: 's4', name: '끈기의 수호자', icon: '🏔️', price: 0, effect: '정신력 +10', onSale: false, isAuto: true },
+            { id: 's5', name: '자비의 수호자', icon: '🕊️', price: 0, effect: '인성 +10', onSale: false, isAuto: true },
+            { id: 's6', name: '다재다능', icon: '🌟', price: 0, effect: '모든 능력치 +7', onSale: false, isAuto: true },
+            { id: 's7', name: '만렙달성', icon: '🌈', price: 0, effect: '전설의 경지', onSale: false, isAuto: true },
+            { id: 's8', name: '기부천사', icon: '👼', price: 0, effect: '모든 능력치 +5', onSale: false, isAuto: true }
+        ]; 
+
+        const defaultPotions = [ 
+            { id: 'p1', name: '체력 포션', icon: '❤️', stat: '체력', price: 500, onSale: true }, 
+            { id: 'p2', name: '지력 포션', icon: '💎', stat: '지력', price: 500, onSale: true }, 
+            { id: 'p3', name: '창의력 포션', icon: '💡', stat: '창의성', price: 500, onSale: true }, 
+            { id: 'p4', name: '정신력 포션', icon: '🌀', stat: '정신력', price: 500, onSale: true }, 
+            { id: 'p5', name: '인성 포션', icon: '🍀', stat: '인성', price: 500, onSale: true } 
+        ]; 
+
+        // 3. Firebase 실시간 동기화 
+        function saveData() {  
+            const noticeVal = document.getElementById('noticeContent').innerText; 
+            db.ref('class65_root').set({ 
+                students, 
+                noticeText: noticeVal, 
+                titleData, 
+                potionData 
+            }); 
+        } 
+
+        function initRealtimeSync() { 
+            db.ref('class65_root').on('value', (snapshot) => { 
+                const data = snapshot.val(); 
+                if (data) { 
+                    students = data.students || []; 
+                    titleData = data.titleData || defaultTitles; 
+                    potionData = data.potionData || defaultPotions; 
+                    noticeText = data.noticeText || "반갑습니다! 공지사항을 입력하세요."; 
+                    
+                    if (!isAdmin) { 
+                        document.getElementById('noticeContent').innerText = noticeText; 
+                    } 
+                    
+                    renderGrid(); 
+                    if (currentIdx !== null) updateUI(); 
+                    if (document.getElementById('shopPage').style.display === 'block') renderShopItems(); 
+                    if (isAdmin) renderAdminShop(); 
+                } else { 
+                    resetToDefault(); 
+                } 
+            }); 
+        } 
+
+        function resetToDefault() { 
+            students = Array.from({length: 25}, (_, i) => ({ 
+                id: Date.now() + i, 
+                num: i + 1, name: (i === 24) ? "선생님" : `${i+1}번 학생`, money: 10000, donation: 0, 
+                stats: { "체력": 5, "지력": 5, "창의성": 5, "정신력": 5, "인성": 5 }, 
+                myTitles: [], pw: null 
+            })); 
+            titleData = defaultTitles; 
+            potionData = defaultPotions; 
+            noticeText = "반갑습니다!"; 
+            saveData(); 
+        } 
+
+        // 4. UI 렌더링 및 이벤트 로직 
+        function renderGrid() { 
+            updateRanking(); 
+            const noticeEl = document.getElementById('noticeContent'); 
+            const noticeBox = document.getElementById('noticeBox'); 
+            const editBadge = document.getElementById('editBadge'); 
+            
+            noticeEl.contentEditable = isAdmin ? "true" : "false"; 
+            isAdmin ? noticeBox.classList.add('admin-edit-mode') : noticeBox.classList.remove('admin-edit-mode'); 
+            editBadge.style.display = isAdmin ? "inline" : "none"; 
+
+            const grid = document.getElementById('studentGrid'); 
+            grid.innerHTML = ''; let totalD = 0; 
+            students.forEach((s, idx) => { 
+                totalD += s.donation; 
+                const statSum = Object.values(s.stats).reduce((a, b) => a + b, 0); 
+                const card = document.createElement('div'); 
+                card.className = `student-card ${idx === 24 ? 'teacher-card' : (top3Ids.includes(s.id) ? 'gold-card' : '')}`; 
+                card.innerHTML = ` 
+                    <div style="font-size:12px; color:#888;">${idx === 24 ? '' : s.num + '번'}</div> 
+                    <div style="font-weight:bold; font-size:1.1rem;">${s.name}</div> 
+                    <div class="card-titles">${(s.myTitles || []).map(t => `<span>${t.icon}</span>`).join('')}</div> 
+                    <div class="card-money">💰 ${s.money.toLocaleString()}원</div> 
+                    <div><span class="personal-stat-sum">⚡ ${statSum}</span></div> 
+                    ${isAdmin ? `<div class="edit-area"><span class="edit-btn" onclick="editNum(event, ${idx})">번호</span><span class="edit-btn" onclick="editName(event, ${idx})">이름</span></div>` : ''} 
+                `; 
+                card.onclick = () => showDetail(idx); 
+                grid.appendChild(card); 
+            }); 
+            document.getElementById('totalDonationDisplay').innerText = totalD.toLocaleString(); 
+        } 
+
+        function updateRanking() { 
+            const onlyStudents = students.filter((_, idx) => idx !== 24); 
+            const sortedByStat = [...onlyStudents].sort((a, b) => { 
+                const sumA = Object.values(a.stats).reduce((p, c) => p + c, 0); 
+                const sumB = Object.values(b.stats).reduce((p, c) => p + c, 0); 
+                return sumB - sumA; 
+            }); 
+            top3Ids = sortedByStat.slice(0, 3).map(s => s.id); 
+            
+            let statHtml = ''; 
+            sortedByStat.slice(0, 10).forEach((s, i) => { 
+                const sum = Object.values(s.stats).reduce((p, c) => p + c, 0); 
+                statHtml += `<div class="rank-item ${i===0?'rank-1':''}"> 
+                    <span class="rank-num">${i+1}</span><span class="rank-name">${s.name}</span><span class="rank-score">${sum}pt</span> 
+                </div>`; 
+            }); 
+            document.getElementById('statRankList').innerHTML = statHtml; 
+
+            const donSorted = [...onlyStudents].sort((a, b) => b.donation - a.donation).slice(0, 10); 
+            let donHtml = ''; 
+            donSorted.forEach((s, i) => { 
+                if(s.donation <= 0) return; 
+                donHtml += `<div class="rank-item"><span class="rank-num">${i+1}</span><span class="rank-name">${s.name}</span><span class="rank-score don">${s.donation.toLocaleString()}</span></div>`; 
+            }); 
+            document.getElementById('donationRankList').innerHTML = donHtml; 
+        } 
+
+        // --- 신규 칭호 자동 체크 로직 ---
+        function checkAutoTitles(idx) {
+            const s = students[idx];
+            if (!s.myTitles) s.myTitles = [];
+            let updated = false;
+            const statSum = Object.values(s.stats).reduce((a, b) => a + b, 0);
+
+            const conditions = [
+                { id: 's1', cond: s.stats['체력'] >= 60, effect: () => s.stats['체력'] += 10 },
+                { id: 's2', cond: s.stats['지력'] >= 60, effect: () => s.stats['지력'] += 10 },
+                { id: 's3', cond: s.stats['창의성'] >= 60, effect: () => s.stats['창의성'] += 10 },
+                { id: 's4', cond: s.stats['정신력'] >= 60, effect: () => s.stats['정신력'] += 10 },
+                { id: 's5', cond: s.stats['인성'] >= 60, effect: () => s.stats['인성'] += 10 },
+                { id: 's6', cond: statSum >= 350, effect: () => Object.keys(s.stats).forEach(k => s.stats[k] += 7) },
+                { id: 's7', cond: statSum >= 500, effect: () => {} }, // 만렙은 추가 스탯 없음
+                { id: 's8', cond: s.donation >= 30000, effect: () => Object.keys(s.stats).forEach(k => s.stats[k] += 5) }
+            ];
+
+            conditions.forEach(c => {
+                const alreadyHas = s.myTitles.some(t => t.id === c.id);
+                if (c.cond && !alreadyHas) {
+                    const titleInfo = defaultTitles.find(dt => dt.id === c.id);
+                    s.myTitles.push(titleInfo);
+                    c.effect();
+                    updated = true;
+                    alert(`🎉 축하합니다! [${titleInfo.name}] 칭호를 획득했습니다!\n${titleInfo.effect} 효과가 적용되었습니다.`);
                 }
             });
+
+            if (updated) {
+                // 능력치 최대 100 제한 보정
+                Object.keys(s.stats).forEach(k => s.stats[k] = Math.min(100, s.stats[k]));
+                saveData();
+            }
         }
 
-        // 초기 데이터 생성
-        function resetData() {
-            const initialStudents = Array.from({length: 25}, (_, i) => ({
-                num: i + 1,
-                name: (i === 24) ? "선생님" : `${i+1}번 학생`,
-                money: 1000,
-                donation: 0,
-                stats: { "체력": 10, "지력": 10, "인성": 10 },
-                pw: "1234"
-            }));
-            db.ref('classData').set({ students: initialStudents, notice: "환영합니다!" });
-        }
-
-        function renderGrid() {
-            const grid = document.getElementById('studentGrid');
-            grid.innerHTML = '';
-            let totalD = 0;
-
-            students.forEach((s, idx) => {
-                totalD += s.donation;
-                const card = document.createElement('div');
-                card.className = `student-card ${idx === 24 ? 'teacher-card' : ''}`;
-                card.innerHTML = `<div>${s.num}번</div><strong>${s.name}</strong><div>💰 ${s.money.toLocaleString()}</div>`;
-                card.onclick = () => showDetail(idx);
-                grid.appendChild(card);
-            });
-            document.getElementById('totalDonationDisplay').innerText = totalD.toLocaleString();
-            updateRanking();
-        }
-
-        function updateRanking() {
-            const sorted = [...students].sort((a, b) => {
-                const sumA = Object.values(a.stats).reduce((p,c)=>p+c, 0);
-                const sumB = Object.values(b.stats).reduce((p,c)=>p+c, 0);
-                return sumB - sumA;
-            }).slice(0, 10);
-
-            let html = '';
-            sorted.forEach((s, i) => {
-                const sum = Object.values(s.stats).reduce((p,c)=>p+c, 0);
-                html += `<div class="rank-item"><span class="rank-num">${i+1}</span><span>${s.name}</span><span class="rank-score">${sum}</span></div>`;
-            });
-            document.getElementById('statRankList').innerHTML = html;
-        }
-
-        function showDetail(idx) {
-            const s = students[idx];
-            const pass = prompt("비밀번호를 입력하세요");
-            if (pass !== s.pw) return alert("틀렸습니다.");
+        function showDetail(idx) { 
+            const s = students[idx]; 
+            if (!isAdmin) { 
+                if (!s.pw) { 
+                    const firstPw = prompt("비밀번호를 설정하세요."); 
+                    if (!firstPw) return; 
+                    s.pw = firstPw; saveData(); 
+                } else { 
+                    if (prompt("비밀번호 입력") !== s.pw) return alert("틀렸습니다."); 
+                } 
+            } 
+            // 상세 페이지 진입 시 자동 칭호 체크
+            checkAutoTitles(idx);
             
-            currentIdx = idx;
-            document.getElementById('mainPage').style.display='none';
-            document.getElementById('detailPage').style.display='block';
-            updateUI();
-        }
+            currentIdx = idx; 
+            document.getElementById('mainPage').style.display='none'; 
+            document.getElementById('detailPage').style.display='block'; 
+            updateUI(); 
+        } 
 
-        function updateUI() {
-            const s = students[currentIdx];
-            document.getElementById('viewName').innerText = s.name;
-            document.getElementById('viewMoney').innerText = s.money.toLocaleString();
+        function updateUI() { 
+            const s = students[currentIdx]; 
+            if(!s) return; 
+            document.getElementById('viewName').innerText = (currentIdx === 24) ? `🏫 ${s.name}` : `${s.num}번 ${s.name}`; 
+            document.getElementById('viewMoney').innerText = s.money.toLocaleString(); 
+            document.getElementById('viewMyDonation').innerText = s.donation.toLocaleString(); 
+            document.getElementById('myMedals').innerHTML = (s.myTitles || []).map(t => `<span title="${t.name}: ${t.effect}" style="font-size:25px; cursor:help;">${t.icon}</span>`).join(' '); 
             
-            let h = '';
-            for(let [k, v] of Object.entries(s.stats)) {
-                h += `<div>${k}: ${v} <button onclick="levelUp('${k}')">강화(100원)</button></div>`;
+            let h = '', adminH = ''; 
+            for (let [k, v] of Object.entries(s.stats)) { 
+                h += `<div style="margin-bottom:8px; display:flex; align-items:center; gap:10px; font-size:14px;"> 
+                    <span style="width:60px">${k}</span> 
+                    <div style="flex:1; height:8px; background:#eee; border-radius:4px; overflow:hidden;"><div style="height:100%; background:var(--main-blue); width:${v}%"></div></div> 
+                    <strong>${v}</strong></div>`; 
+                adminH += `<div style="margin-bottom:5px; font-size:13px; display:flex; align-items:center; justify-content:space-between;"> 
+                    <span>${k} (${v})</span> 
+                    <div><button class="stat-admin-btn" onclick="updateStat('${k}', 1)">+1</button><button class="stat-admin-btn" onclick="updateStat('${k}', -1)">-1</button></div> 
+                </div>`; 
+            } 
+            document.getElementById('statList').innerHTML = h; 
+            document.getElementById('adminStatControls').innerHTML = adminH; 
+            document.getElementById('adminPanel').style.display = isAdmin ? 'block' : 'none'; 
+        } 
+
+        function toggleAdmin() { 
+            if (!isAdmin) { if (prompt("비번") === ADMIN_PW) isAdmin = true; }  
+            else isAdmin = false; 
+            document.getElementById('mainAdminLoginBtn').innerText = isAdmin ? "🔓 로그아웃" : "🔒 관리자 로그인"; 
+            document.getElementById('mainAdminLoginBtn').classList.toggle('active', isAdmin); 
+            document.getElementById('adminShopPanel').style.display = isAdmin ? "block" : "none"; 
+            renderGrid(); 
+            if(isAdmin) renderAdminShop();
+        } 
+
+        function updateStat(key, amt) { 
+            const s = students[currentIdx]; 
+            s.stats[key] = Math.max(0, Math.min(100, s.stats[key] + amt)); 
+            saveData(); 
+        } 
+
+        function updateMoney(dir) { 
+            const val = parseInt(document.getElementById('moneyInput').value); 
+            if(val) { students[currentIdx].money += (val * dir); saveData(); } 
+        } 
+
+        function donateMoney() { 
+            const v = parseInt(prompt("기부할 금액")); 
+            if(v > 0 && students[currentIdx].money >= v) { 
+                students[currentIdx].money -= v; 
+                students[currentIdx].donation += v; 
+                saveData(); 
+                // 기부 후 기부천사 칭호 즉시 체크
+                checkAutoTitles(currentIdx);
+            } 
+        } 
+
+        // 5. 상점 로직 
+        function renderShopItems() { 
+            const s = students[currentIdx]; 
+            if(!s) return;
+
+            let tH = ''; 
+            // 상점에는 onSale이 true인 것(수동 구매 칭호)만 표시
+            titleData.filter(t => t.onSale).forEach(t => { 
+                const owned = (s.myTitles || []).some(m => m.id === t.id); 
+                tH += `<div class="item-card"><div style="font-size:25px">${t.icon}</div> 
+                    <strong>${t.name}</strong><br><small>${t.effect}</small><br> 
+                    <span style="color:var(--gold); font-weight:bold;">${t.price.toLocaleString()}원</span><br> 
+                    ${owned ? '<b>보유중</b>' : `<button class="btn btn-blue" onclick="buyTitle('${t.id}')">구매</button>`}</div>`; 
+            }); 
+            document.getElementById('titleShopGrid').innerHTML = tH || '판매 중인 칭호가 없습니다.'; 
+            
+            let pH = ''; 
+            potionData.forEach(p => { 
+                pH += `<div class="item-card ${!p.onSale ? 'sold-out' : ''}"><div style="font-size:25px">${p.icon}</div> 
+                    <strong>${p.name}</strong><br><span style="color:var(--purple); font-weight:bold;">${p.price.toLocaleString()}원</span><br> 
+                    ${!p.onSale ? '<b>품절</b>' : `<button class="btn" style="background:var(--purple); color:white;" onclick="buyPotion('${p.id}')">구매</button>`}</div>`; 
+            }); 
+            document.getElementById('potionShopGrid').innerHTML = pH || '표시할 상품이 없습니다.'; 
+        } 
+
+        function buyTitle(id) { 
+            const t = titleData.find(x => x.id === id); 
+            const s = students[currentIdx]; 
+            if(s.money < t.price) return alert("돈 부족"); 
+            if((s.myTitles || []).some(m => m.id === t.id)) return alert("이미 있음"); 
+            
+            s.money -= t.price; 
+            if(!s.myTitles) s.myTitles = [];
+            s.myTitles.push(t); 
+            
+            // 구매 칭호 효과 적용
+            if(t.id === 't1') Object.keys(s.stats).forEach(k => s.stats[k] = Math.min(100, s.stats[k]+1)); 
+            if(t.id === 't2') Object.keys(s.stats).forEach(k => s.stats[k] = Math.min(100, s.stats[k]+5)); 
+            if(t.id === 't3') Object.keys(s.stats).forEach(k => s.stats[k] = Math.min(100, s.stats[k]+10)); 
+            if(t.id === 't10') Object.keys(s.stats).forEach(k => s.stats[k] = Math.min(100, s.stats[k]+20)); 
+            if(t.id === 't4') Object.keys(s.stats).forEach(k => s.stats[k] = 100); 
+            if(t.id.startsWith('t') && t.price === 3000) { // 왕 시리즈
+                const statKey = t.effect.split(' ')[0];
+                s.stats[statKey] = Math.min(100, s.stats[statKey] + 10);
             }
-            document.getElementById('statList').innerHTML = h;
-            document.getElementById('adminPanel').style.display = isAdmin ? 'block' : 'none';
-        }
+            
+            saveData(); alert("구매 완료!"); 
+        } 
 
-        function levelUp(key) {
-            const s = students[currentIdx];
-            if (s.money >= 100) {
-                s.money -= 100;
-                s.stats[key] += 1;
-                saveToFirebase();
-            } else { alert("돈이 부족합니다."); }
-        }
+        function buyPotion(id) { 
+            const p = potionData.find(x => x.id === id); 
+            const s = students[currentIdx]; 
+            if(s.money < p.price) return alert("돈 부족"); 
+            s.money -= p.price; 
+            s.stats[p.stat] = Math.min(100, s.stats[p.stat]+1); 
+            saveData(); 
+            alert(`${p.name}을(를) 사용했습니다! ${p.stat} +1`);
+            // 포션 사용 후 능력치 조건 체크
+            checkAutoTitles(currentIdx);
+        } 
 
-        function saveToFirebase() {
-            db.ref('classData/students').set(students);
-        }
+        // 6. 관리자 상점 관리 
+        function renderAdminShop() { 
+            const grid = document.getElementById('adminShopGrid'); 
+            if(!grid) return;
+            grid.innerHTML = ''; 
+            
+            // 모든 데이터 통합 관리
+            const combinedData = [...titleData, ...potionData];
+            combinedData.forEach((item) => { 
+                const card = document.createElement('div'); 
+                card.className = `admin-item-card ${(!item.onSale && !item.isAuto) ? 'off-item' : ''}`; 
+                card.innerHTML = `<b>${item.icon} ${item.name}</b><br> 
+                    ${item.isAuto ? '<span style="color:blue">[자동지급]</span>' : `가격: <input type="number" id="p-edit-${item.id}" value="${item.price}" style="width:70px"> 
+                    <button onclick="editPrice('${item.id}')">수정</button> 
+                    <button onclick="toggleItem('${item.id}')">${item.onSale ? '품절처리' : '판매개시'}</button>`}`; 
+                grid.appendChild(card); 
+            }); 
+        } 
 
-        function saveNotice() {
-            if (isAdmin) {
-                const txt = document.getElementById('noticeContent').innerText;
-                db.ref('classData/notice').set(txt);
-            }
-        }
+        function editPrice(id) { 
+            const newP = parseInt(document.getElementById(`p-edit-${id}`).value); 
+            if(isNaN(newP)) return alert("가격을 숫자로 입력하세요.");
+            let target = titleData.find(x => x.id === id) || potionData.find(x => x.id === id);
+            if(target) { target.price = newP; saveData(); alert("수정됨"); } 
+        } 
 
-        function toggleAdmin() {
-            const pw = prompt("관리자 비번");
-            if (pw === "0605") {
-                isAdmin = !isAdmin;
-                alert(isAdmin ? "관리자 모드 활성" : "관리자 모드 해제");
-                document.getElementById('noticeContent').contentEditable = isAdmin;
-                updateUI();
-            }
-        }
+        function toggleItem(id) { 
+            let target = titleData.find(x => x.id === id) || potionData.find(x => x.id === id);
+            if(target) { target.onSale = !target.onSale; saveData(); } 
+        } 
 
-        function showMain() {
-            currentIdx = null;
-            document.getElementById('mainPage').style.display='block';
-            document.getElementById('detailPage').style.display='none';
-        }
+        function showMain() { currentIdx = null; document.getElementById('mainPage').style.display='block'; document.getElementById('detailPage').style.display='none'; } 
+        function showShop() { document.getElementById('detailPage').style.display='none'; document.getElementById('shopPage').style.display='block'; renderShopItems(); } 
+        function closeShop() { document.getElementById('shopPage').style.display='none'; document.getElementById('detailPage').style.display='block'; } 
+        
+        function editNum(e, i) { e.stopPropagation(); const n = prompt("새 번호", students[i].num); if(n) { students[i].num = parseInt(n); saveData(); } } 
+        function editName(e, i) { e.stopPropagation(); const n = prompt("새 이름", students[i].name); if(n) { students[i].name = n; saveData(); } } 
+        function resetStudentPw() { const newPw = document.getElementById('newStudentPw').value; if(newPw) { students[currentIdx].pw = newPw; saveData(); alert("변경됨"); } } 
+        function resetAllData() { if(isAdmin && confirm("정말 모든 데이터를 초기화하시겠습니까?") && prompt("삭제승인 이라고 입력하세요") === "삭제승인") { resetToDefault(); } } 
 
-        // 초기 실행
-        initSync();
-    </script>
-</body>
+        initRealtimeSync(); 
+    </script> 
+</body> 
 </html>
