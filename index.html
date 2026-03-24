@@ -143,19 +143,18 @@
         // 1. Firebase 설정 (본인의 코드로 교체하세요)
         // ---------------------------------------------------------
         const firebaseConfig = {
-  apiKey: "AIzaSyDwCDLMu2pc1KP_jXtGquEd6jIS9PoXohA",
-  authDomain: "class-6-5-b6e45.firebaseapp.com",
-  databaseURL: "https://class-6-5-b6e45-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "class-6-5-b6e45",
-  storageBucket: "class-6-5-b6e45.firebasestorage.app",
-  messagingSenderId: "763619098825",
-  appId: "1:763619098825:web:c6ba974f08b9da5a40cd18",
-  measurementId: "G-0ZDBD81D38"
+  apiKey: "AIzaSyCqE1dKLYBjVnJFtnet7I4NKyKUAma3dgY",
+  authDomain: "class6-5-5faf8.firebaseapp.com",
+  projectId: "class6-5-5faf8",
+  storageBucket: "class6-5-5faf8.firebasestorage.app",
+  messagingSenderId: "178537841758",
+  appId: "1:178537841758:web:e4cd2fb886d1685900e0cf",
+  measurementId: "G-FW1MKVBY5P"
 };
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
         // ---------------------------------------------------------
         // 2. 변수 및 초기 데이터
         // ---------------------------------------------------------
