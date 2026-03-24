@@ -2,23 +2,29 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>6학년 5반 학급관리 v13</title>
+    <title>6학년 5반 학급관리 v14</title>
     <style>
         :root { --main-blue: #4a90e2; --admin-red: #e74c3c; --gold: #f1c40f; --green: #2ecc71; --purple: #9b59b6; --dark: #34495e; }
         body { font-family: 'Pretendard', sans-serif; background: #f0f4f8; margin: 0; padding: 20px; }
         
+        /* 헤더 */
         .header-stats { background: white; padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .total-donation-box { font-size: 1.4rem; color: var(--green); font-weight: bold; }
         
+        /* 메인 그리드 */
         .grid-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; max-width: 1100px; margin: auto; }
         .student-card { background: white; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.2s; border: 1px solid #eee; position: relative; }
         .student-card:hover { transform: translateY(-5px); border-color: var(--main-blue); }
-        .personal-stat-sum { margin-top: 8px; font-size: 0.85rem; color: #555; background: #eef5ff; padding: 4px 8px; border-radius: 20px; display: inline-block; font-weight: 600; }
+        
+        /* (신규) 메인화면 정보 표시 스타일 */
+        .card-money { margin-top: 5px; font-size: 0.95rem; color: #d35400; font-weight: bold; }
+        .personal-stat-sum { margin-top: 5px; font-size: 0.8rem; color: #555; background: #eef5ff; padding: 3px 8px; border-radius: 20px; display: inline-block; font-weight: 600; }
 
         .edit-area { margin-top: 10px; display: flex; justify-content: center; gap: 8px; opacity: 0; transition: 0.3s; }
         .student-card:hover .edit-area { opacity: 1; }
         .edit-btn { font-size: 10px; color: #999; text-decoration: underline; cursor: pointer; }
 
+        /* 상세 & 상점 페이지 */
         #detailPage, #shopPage { display: none; max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         .medal-shelf { display: flex; flex-wrap: wrap; gap: 10px; background: #f9f9f9; padding: 15px; border-radius: 15px; border: 2px inset #eee; min-height: 50px; margin-bottom: 20px; }
         
@@ -62,7 +68,6 @@
                 <button class="btn btn-blue" style="width:100%" onclick="showShop()">🛒 상점 방문</button>
                 <button class="btn" style="width:100%; margin-top:10px; background:var(--green); color:white;" onclick="donateMoney()">❤️ 기부하기</button>
             </div>
-
             <div style="flex: 1;">
                 <h3 style="margin:0">💰 잔액: <span id="viewMoney">0</span>원</h3>
                 <h4 style="margin:5px 0; color:var(--green)">🕊️ 나의 기부: <span id="viewMyDonation">0</span>원</h4>
@@ -81,9 +86,9 @@
 
     <div id="shopPage">
         <button class="btn" onclick="closeShop()">← 뒤로가기</button>
-        <h3 class="shop-section-title">🎖️ 칭호 상점 (개별 능력치 100 미만만 구매 가능)</h3>
+        <h3 class="shop-section-title">🎖️ 칭호 상점</h3>
         <div id="titleShopGrid" class="shop-grid"></div>
-        <h3 class="shop-section-title">🧪 포션 상점 (개별 능력치 100 미만만 구매 가능)</h3>
+        <h3 class="shop-section-title">🧪 포션 상점</h3>
         <div id="potionShopGrid" class="shop-grid"></div>
     </div>
 
@@ -91,7 +96,7 @@
         let isAdmin = false;
         const ADMIN_PW = "9912";
         let currentIdx = null;
-        const SINGLE_STAT_MAX = 100; // 1. 개별 능력치 상한선 설정
+        const SINGLE_STAT_MAX = 100;
 
         let titleData = [
             { id: 't1', name: '6학년을 시작하는 자', icon: '🌱', price: 1000, isForSale: true, effect: '모든능력치+1' },
@@ -117,16 +122,15 @@
         let students = [];
 
         function saveData() {
-            localStorage.setItem('class65_students_v13', JSON.stringify(students));
-            localStorage.setItem('class65_titles_v13', JSON.stringify(titleData));
-            localStorage.setItem('class65_potions_v13', JSON.stringify(potionData));
+            localStorage.setItem('class65_students_v14', JSON.stringify(students));
+            localStorage.setItem('class65_titles_v14', JSON.stringify(titleData));
+            localStorage.setItem('class65_potions_v14', JSON.stringify(potionData));
         }
 
         function loadData() {
-            const savedStudents = localStorage.getItem('class65_students_v13');
-            const savedTitles = localStorage.getItem('class65_titles_v13');
-            const savedPotions = localStorage.getItem('class65_potions_v13');
-
+            const savedStudents = localStorage.getItem('class65_students_v14');
+            const savedTitles = localStorage.getItem('class65_titles_v14');
+            const savedPotions = localStorage.getItem('class65_potions_v14');
             if (savedStudents) { students = JSON.parse(savedStudents); } 
             else {
                 students = Array.from({length: 25}, (_, i) => ({
@@ -141,6 +145,7 @@
 
         function resetAllData() { if(confirm("데이터를 초기화하시겠습니까?")) { localStorage.clear(); location.reload(); } }
 
+        // --- (수정) 메인 렌더링 함수: 잔액 표시 추가 ---
         function renderGrid() {
             const grid = document.getElementById('studentGrid');
             grid.innerHTML = '';
@@ -150,26 +155,26 @@
                 const personalStatSum = Object.values(s.stats).reduce((a, b) => a + b, 0);
                 const card = document.createElement('div');
                 card.className = 'student-card';
-                card.innerHTML = `<div style="font-size:0.8rem; color:#888;">${s.num}번</div>
+                card.innerHTML = `
+                    <div style="font-size:0.8rem; color:#888;">${s.num}번</div>
                     <div style="font-size:1.1rem; font-weight:bold;">${s.name}</div>
-                    <div class="personal-stat-sum">⚡ 능력치합: ${personalStatSum}</div>
-                    <div class="edit-area"><span class="edit-btn" onclick="editNum(event, ${idx})">번호수정</span><span class="edit-btn" onclick="editName(event, ${idx})">이름수정</span></div>`;
+                    <div class="card-money">💰 ${s.money.toLocaleString()}원</div>
+                    <div class="personal-stat-sum">⚡ 능력합: ${personalStatSum}</div>
+                    <div class="edit-area">
+                        <span class="edit-btn" onclick="editNum(event, ${idx})">번호수정</span>
+                        <span class="edit-btn" onclick="editName(event, ${idx})">이름수정</span>
+                    </div>`;
                 card.onclick = () => showDetail(idx);
                 grid.appendChild(card);
             });
             document.getElementById('totalDonationDisplay').innerText = totalDonationSum.toLocaleString();
         }
 
+        // 나머지 상세 로직 (v13과 동일)
         function editNum(e, idx) { e.stopPropagation(); const n = prompt("새 번호", students[idx].num); if(n) { students[idx].num = parseInt(n); saveData(); renderGrid(); } }
         function editName(e, idx) { e.stopPropagation(); const n = prompt("새 이름", students[idx].name); if(n) { students[idx].name = n; saveData(); renderGrid(); } }
-
-        function showDetail(idx) {
-            currentIdx = idx;
-            document.getElementById('mainPage').style.display = 'none';
-            document.getElementById('detailPage').style.display = 'block';
-            updateUI();
-        }
-
+        function showDetail(idx) { currentIdx = idx; document.getElementById('mainPage').style.display = 'none'; document.getElementById('detailPage').style.display = 'block'; updateUI(); }
+        
         function updateUI() {
             const s = students[currentIdx];
             const sum = Object.values(s.stats).reduce((a, b) => a + b, 0);
@@ -178,7 +183,6 @@
             document.getElementById('viewMyDonation').innerText = s.donation.toLocaleString();
             document.getElementById('myMedals').innerHTML = s.myTitles.map(t => `<span style="font-size:25px" title="${t.name}">${t.icon}</span>`).join(' ');
             document.getElementById('personalStatSumDisplay').innerText = `📊 능력치 (합계: ${sum}/500)`;
-
             let statHtml = '';
             for (let [name, value] of Object.entries(s.stats)) {
                 statHtml += `<div style="margin-bottom:8px; display:flex; align-items:center; gap:10px; font-size:14px;">
@@ -210,7 +214,6 @@
                 </div>`;
             });
             document.getElementById('titleShopGrid').innerHTML = tHtml;
-
             let pHtml = '';
             potionData.forEach(p => {
                 pHtml += `<div class="item-card ${!p.isForSale ? 'sold-out' : ''}">
@@ -227,17 +230,12 @@
             document.getElementById('potionShopGrid').innerHTML = pHtml;
         }
 
-        // 칭호 구매 로직 (상한선 반영)
         function buyTitle(id) {
             const t = titleData.find(item => item.id === id);
             const s = students[currentIdx];
-            if(!t.isForSale) return;
-            
             if(s.money >= t.price) {
                 s.money -= t.price; s.myTitles.push(t); 
-                // 상한선 적용 헬퍼 함수
                 const safeAdd = (key, val) => s.stats[key] = Math.min(s.stats[key] + val, SINGLE_STAT_MAX);
-                
                 if(t.id === 't4') Object.keys(s.stats).forEach(k => s.stats[k] = SINGLE_STAT_MAX);
                 else if(t.id === 't1') Object.keys(s.stats).forEach(k => safeAdd(k, 1));
                 else if(t.id === 't2') Object.keys(s.stats).forEach(k => safeAdd(k, 5));
@@ -247,31 +245,23 @@
                 else if(t.id === 't6') safeAdd('체력', 10);
                 else if(t.id === 't7' || t.id === 't9') safeAdd('인성', 10);
                 else if(t.id === 't8') safeAdd('정신력', 10);
-                
-                saveData(); updateUI(); renderShopItems();
-                alert(`[${t.name}] 칭호 획득! (능력치는 최대 ${SINGLE_STAT_MAX}까지만 상승합니다)`);
+                saveData(); updateUI(); renderShopItems(); alert(`칭호 획득!`);
             } else alert("잔액 부족");
         }
 
-        // 포션 구매 로직 (상한선 반영)
         function buyPotion(id) {
             const p = potionData.find(item => item.id === id);
             const s = students[currentIdx];
-            
-            if(s.stats[p.stat] >= SINGLE_STAT_MAX) {
-                alert(`해당 능력치가 이미 최대치(${SINGLE_STAT_MAX})입니다!`); return;
-            }
-
+            if(s.stats[p.stat] >= SINGLE_STAT_MAX) { alert(`최대치입니다!`); return; }
             if(s.money >= p.price) {
                 s.money -= p.price; s.stats[p.stat] += 1;
-                saveData(); updateUI();
-                alert(`✨ ${p.name} 구매 성공! [${p.stat}]이 상승했습니다.`);
+                saveData(); updateUI(); alert(`구매 성공!`);
             } else alert("잔액 부족");
         }
 
         function updateItemPrice(type, id, newPrice) { const list = (type === 'title') ? titleData : potionData; list.find(i => i.id === id).price = parseInt(newPrice); saveData(); }
         function toggleSale(type, id) { const list = (type === 'title') ? titleData : potionData; const item = list.find(i => i.id === id); item.isForSale = !item.isForSale; saveData(); renderShopItems(); }
-        function donateMoney() { const a = parseInt(prompt("기부액")); if(a > 0 && students[currentIdx].money >= a) { students[currentIdx].money -= a; students[currentIdx].donation += a; saveData(); updateUI(); alert("기부 감사합니다!"); } }
+        function donateMoney() { const a = parseInt(prompt("기부액")); if(a > 0 && students[currentIdx].money >= a) { students[currentIdx].money -= a; students[currentIdx].donation += a; saveData(); updateUI(); alert("감사합니다!"); } }
         function updateMoney(d) { const v = parseInt(document.getElementById('moneyInput').value); if(v) { students[currentIdx].money += (v * d); saveData(); updateUI(); } }
         function toggleAdmin() { if(prompt("암호") === ADMIN_PW) { isAdmin = true; renderShopItems(); updateUI(); } }
         function showMain() { document.getElementById('mainPage').style.display='block'; document.getElementById('detailPage').style.display='none'; renderGrid(); }
