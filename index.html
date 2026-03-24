@@ -28,7 +28,6 @@
         #mainAdminLoginBtn, #adminResetBtn { background: #eee; color: #888; border: 1px solid #ddd; padding: 4px 8px; border-radius: 5px; cursor: pointer; font-size: 10px; }
         #mainAdminLoginBtn.active { background: var(--admin-red); color: white; border: none; }
 
-        /* 공지사항 스타일 수정 */
         .notice-container { background: var(--notice-bg); border: 2px solid #fab005; border-radius: 12px; padding: 15px; margin: 15px auto; max-width: 800px; transition: 0.3s; }
         .notice-container.admin-edit-mode { background: #fff; border-style: dashed; border-color: var(--admin-red); box-shadow: 0 0 10px rgba(231, 76, 60, 0.2); }
         .notice-title { font-weight: bold; color: #f08c00; margin-bottom: 8px; font-size: 1.1rem; display: flex; justify-content: space-between; }
@@ -64,6 +63,10 @@
         .btn-blue { background: var(--main-blue); color: white; }
         .item-card { border: 1px solid #eee; padding: 12px; border-radius: 12px; text-align: center; }
         .item-card.sold-out { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
+        
+        /* 추가 스타일: 관리자 능력치 버튼 */
+        .stat-admin-btn { padding: 2px 6px; font-size: 12px; cursor: pointer; background: #fff; border: 1px solid #ddd; border-radius: 4px; }
+        .stat-admin-btn:hover { background: #eee; }
     </style>
 </head>
 <body>
@@ -128,10 +131,16 @@
                 
                 <div id="adminPanel" style="display:none; background:#fff5f5; padding:15px; border-radius:10px; margin-top:15px; border: 1px solid #ffcfcf;">
                     <div style="margin-bottom:15px;">
-                        <strong style="color:var(--admin-red)">🛠 능력치/기부금 수동 조정</strong><br><br>
-                        <input type="number" id="moneyInput" style="width:80px; padding:5px;"> 원
+                        <strong style="color:var(--admin-red)">🛠 돈(잔액) 수동 조정</strong><br><br>
+                        <input type="number" id="moneyInput" style="width:80px; padding:5px;" placeholder="금액"> 원
                         <button class="btn btn-blue" onclick="updateMoney(1)">지급</button>
                         <button class="btn" style="background:var(--admin-red); color:white;" onclick="updateMoney(-1)">차감</button>
+                    </div>
+                    <hr style="border: 0.5px solid #eee;">
+                    <div style="margin-bottom:15px;">
+                        <strong style="color:var(--admin-red)">⚡ 능력치 직접 조정</strong><br><br>
+                        <div id="adminStatControls">
+                            </div>
                     </div>
                     <hr style="border: 0.5px solid #eee;">
                     <div>
@@ -208,8 +217,6 @@
 
         function renderGrid() {
             updateRanking();
-            
-            // 공지사항 편집 권한 설정
             const noticeEl = document.getElementById('noticeContent');
             const noticeBox = document.getElementById('noticeBox');
             const editBadge = document.getElementById('editBadge');
@@ -253,7 +260,6 @@
             document.getElementById('totalDonationDisplay').innerText = totalD.toLocaleString();
         }
 
-        // --- 이하 기능 함수들 (기존과 동일) ---
         function updateRanking() {
             const onlyStudents = students.filter((_, idx) => idx !== 24);
             const sortedByStat = [...onlyStudents].sort((a, b) => {
@@ -308,10 +314,69 @@
             document.getElementById('mainAdminLoginBtn').className = isAdmin ? "active" : "";
             document.getElementById('adminShopPanel').style.display = isAdmin ? "block" : "none";
             if(isAdmin) renderAdminShop();
-            renderGrid(); // 여기서 공지사항 편집 권한이 갱신됨
+            renderGrid();
         }
 
-        // 나머지 상점/기부 관련 함수들은 제공된 소스코드와 동일하게 유지
+        function updateUI() {
+            const s = students[currentIdx];
+            document.getElementById('viewName').innerText = (currentIdx === 24) ? `🏫 ${s.name}` : `${s.num}번 ${s.name}`;
+            document.getElementById('viewMoney').innerText = s.money.toLocaleString();
+            document.getElementById('viewMyDonation').innerText = s.donation.toLocaleString();
+            document.getElementById('myMedals').innerHTML = s.myTitles.map(t => `<span title="${t.name}" style="font-size:25px">${t.icon}</span>`).join(' ');
+            
+            let h = '';
+            let adminH = '';
+            for (let [k, v] of Object.entries(s.stats)) {
+                // 사용자용 능력치 그래프
+                h += `<div style="margin-bottom:8px; display:flex; align-items:center; gap:10px; font-size:14px;">
+                    <span style="width:60px">${k}</span>
+                    <div style="flex:1; height:8px; background:#eee; border-radius:4px; overflow:hidden;"><div style="height:100%; background:var(--main-blue); width:${v}%"></div></div>
+                    <strong>${v}</strong></div>`;
+                
+                // 관리자용 능력치 버튼
+                adminH += `<div style="margin-bottom:5px; font-size:13px; display:flex; align-items:center; justify-content:space-between;">
+                    <span>${k} (${v})</span>
+                    <div>
+                        <button class="stat-admin-btn" onclick="updateStat('${k}', 1)">+1</button>
+                        <button class="stat-admin-btn" onclick="updateStat('${k}', 5)">+5</button>
+                        <button class="stat-admin-btn" onclick="updateStat('${k}', -1)" style="margin-left:5px;">-1</button>
+                        <button class="stat-admin-btn" onclick="updateStat('${k}', -5)">-5</button>
+                    </div>
+                </div>`;
+            }
+            document.getElementById('statList').innerHTML = h;
+            document.getElementById('adminStatControls').innerHTML = adminH;
+            document.getElementById('adminPanel').style.display = isAdmin ? 'block' : 'none';
+        }
+
+        // 능력치 수동 업데이트 함수 (관리자용)
+        function updateStat(statKey, amount) {
+            if(!isAdmin) return;
+            const s = students[currentIdx];
+            let newVal = s.stats[statKey] + amount;
+            
+            // 0~100 사이로 제한
+            if(newVal < 0) newVal = 0;
+            if(newVal > 100) newVal = 100;
+            
+            s.stats[statKey] = newVal;
+            
+            checkAutoTitles(s); // 능력치 변화에 따른 업적 체크
+            saveData();
+            updateUI();
+            renderGrid();
+        }
+
+        function updateMoney(d) { 
+            const val = parseInt(document.getElementById('moneyInput').value); 
+            if(val) { 
+                students[currentIdx].money += (val * d); 
+                saveData(); 
+                updateUI(); 
+                renderGrid(); 
+            } 
+        }
+
         function resetStudentPw() {
             if (!isAdmin) return;
             const newPw = document.getElementById('newStudentPw').value;
@@ -323,6 +388,7 @@
                 document.getElementById('newStudentPw').value = "";
             }
         }
+
         function buyPotion(id) {
             const p = potionData.find(x => x.id === id); const s = students[currentIdx];
             if(!p.onSale) return alert("품절되었습니다.");
@@ -332,6 +398,7 @@
             alert(`🧪 [${p.name}] 사용!\n${p.stat} 능력치가 1 상승했습니다! (현재: ${s.stats[p.stat]})`);
             checkAutoTitles(s); saveData(); updateUI();
         }
+
         function buyTitle(id) {
             const t = titleData.find(x => x.id === id); const s = students[currentIdx];
             if(!t.onSale) return alert("품절되었습니다.");
@@ -350,41 +417,7 @@
             alert(`🎖️ 호칭 획득: [${t.name}]!\n효과: ${t.effect}가 적용되었습니다.`);
             checkAutoTitles(s); saveData(); renderShopItems(); updateUI();
         }
-        function renderAdminShop() {
-            const grid = document.getElementById('adminShopGrid');
-            grid.innerHTML = '';
-            titleData.forEach((t, i) => {
-                const card = document.createElement('div');
-                card.className = `admin-item-card ${!t.onSale ? 'off-item' : ''}`;
-                card.innerHTML = `<b>${t.icon} ${t.name}</b><br>
-                    가격: <input type="number" id="price-t-${i}" value="${t.price}"> <button onclick="updatePrice('title', ${i})">수정</button><br>
-                    <button style="margin-top:5px; width:100%; background:${t.onSale?'#eee':'var(--admin-red)'}; color:${t.onSale?'#333':'white'};" 
-                    onclick="toggleSale('title', ${i})">${t.onSale ? '판매중 (OFF)' : '품절 (ON)'}</button>`;
-                grid.appendChild(card);
-            });
-            potionData.forEach((p, i) => {
-                const card = document.createElement('div');
-                card.className = `admin-item-card ${!p.onSale ? 'off-item' : ''}`;
-                card.innerHTML = `<b>${p.icon} ${p.name}</b><br>
-                    가격: <input type="number" id="price-p-${i}" value="${p.price}"> <button onclick="updatePrice('potion', ${i})">수정</button><br>
-                    <button style="margin-top:5px; width:100%; background:${p.onSale?'#eee':'var(--admin-red)'}; color:${p.onSale?'#333':'white'};" 
-                    onclick="toggleSale('potion', ${i})">${p.onSale ? '판매중 (OFF)' : '품절 (ON)'}</button>`;
-                grid.appendChild(card);
-            });
-        }
-        function updatePrice(type, idx) {
-            const newPrice = parseInt(document.getElementById(`price-${type==='title'?'t':'p'}-${idx}`).value);
-            if(type === 'title') titleData[idx].price = newPrice;
-            else potionData[idx].price = newPrice;
-            saveData(); alert("반영되었습니다.");
-        }
-        function toggleSale(type, idx) {
-            if(type === 'title') titleData[idx].onSale = !titleData[idx].onSale;
-            else potionData[idx].onSale = !potionData[idx].onSale;
-            saveData(); renderAdminShop();
-        }
-        function editNum(e, i) { e.stopPropagation(); const n = prompt("새 번호", students[i].num); if(n) { students[i].num = parseInt(n); saveData(); renderGrid(); } }
-        function editName(e, i) { e.stopPropagation(); const n = prompt("새 이름", students[i].name); if(n) { students[i].name = n; saveData(); renderGrid(); } }
+
         function checkAutoTitles(s) {
             let gotNew = false;
             const sum = Object.values(s.stats).reduce((a, b) => a + b, 0);
@@ -409,22 +442,45 @@
             if (s.donation >= 30000) add('t_angel', '기부천사', '👼', '모든 능력치 +5', 5, true);
             if (gotNew) { saveData(); updateRanking(); }
         }
-        function updateUI() {
-            const s = students[currentIdx];
-            document.getElementById('viewName').innerText = (currentIdx === 24) ? `🏫 ${s.name}` : `${s.num}번 ${s.name}`;
-            document.getElementById('viewMoney').innerText = s.money.toLocaleString();
-            document.getElementById('viewMyDonation').innerText = s.donation.toLocaleString();
-            document.getElementById('myMedals').innerHTML = s.myTitles.map(t => `<span title="${t.name}" style="font-size:25px">${t.icon}</span>`).join(' ');
-            let h = '';
-            for (let [k, v] of Object.entries(s.stats)) {
-                h += `<div style="margin-bottom:8px; display:flex; align-items:center; gap:10px; font-size:14px;">
-                    <span style="width:60px">${k}</span>
-                    <div style="flex:1; height:8px; background:#eee; border-radius:4px; overflow:hidden;"><div style="height:100%; background:var(--main-blue); width:${v}%"></div></div>
-                    <strong>${v}</strong></div>`;
-            }
-            document.getElementById('statList').innerHTML = h;
-            document.getElementById('adminPanel').style.display = isAdmin ? 'block' : 'none';
+
+        function renderAdminShop() {
+            const grid = document.getElementById('adminShopGrid');
+            grid.innerHTML = '';
+            titleData.forEach((t, i) => {
+                const card = document.createElement('div');
+                card.className = `admin-item-card ${!t.onSale ? 'off-item' : ''}`;
+                card.innerHTML = `<b>${t.icon} ${t.name}</b><br>
+                    가격: <input type="number" id="price-t-${i}" value="${t.price}"> <button onclick="updatePrice('title', ${i})">수정</button><br>
+                    <button style="margin-top:5px; width:100%; background:${t.onSale?'#eee':'var(--admin-red)'}; color:${t.onSale?'#333':'white'};" 
+                    onclick="toggleSale('title', ${i})">${t.onSale ? '판매중 (OFF)' : '품절 (ON)'}</button>`;
+                grid.appendChild(card);
+            });
+            potionData.forEach((p, i) => {
+                const card = document.createElement('div');
+                card.className = `admin-item-card ${!p.onSale ? 'off-item' : ''}`;
+                card.innerHTML = `<b>${p.icon} ${p.name}</b><br>
+                    가격: <input type="number" id="price-p-${i}" value="${p.price}"> <button onclick="updatePrice('potion', ${i})">수정</button><br>
+                    <button style="margin-top:5px; width:100%; background:${p.onSale?'#eee':'var(--admin-red)'}; color:${p.onSale?'#333':'white'};" 
+                    onclick="toggleSale('potion', ${i})">${p.onSale ? '판매중 (OFF)' : '품절 (ON)'}</button>`;
+                grid.appendChild(card);
+            });
         }
+        
+        function updatePrice(type, idx) {
+            const newPrice = parseInt(document.getElementById(`price-${type==='title'?'t':'p'}-${idx}`).value);
+            if(type === 'title') titleData[idx].price = newPrice;
+            else potionData[idx].price = newPrice;
+            saveData(); alert("반영되었습니다.");
+        }
+        
+        function toggleSale(type, idx) {
+            if(type === 'title') titleData[idx].onSale = !titleData[idx].onSale;
+            else potionData[idx].onSale = !potionData[idx].onSale;
+            saveData(); renderAdminShop();
+        }
+        
+        function editNum(e, i) { e.stopPropagation(); const n = prompt("새 번호", students[i].num); if(n) { students[i].num = parseInt(n); saveData(); renderGrid(); } }
+        function editName(e, i) { e.stopPropagation(); const n = prompt("새 이름", students[i].name); if(n) { students[i].name = n; saveData(); renderGrid(); } }
         function renderShopItems() {
             const s = students[currentIdx];
             let tH = '';
@@ -445,7 +501,6 @@
             });
             document.getElementById('potionShopGrid').innerHTML = pH;
         }
-        function updateMoney(d) { const val = parseInt(document.getElementById('moneyInput').value); if(val) { students[currentIdx].money += (val * d); saveData(); updateUI(); renderGrid(); } }
         function donateMoney() { const v = parseInt(prompt("금액 입력")); if(v > 0 && students[currentIdx].money >= v) { students[currentIdx].money -= v; students[currentIdx].donation += v; checkAutoTitles(students[currentIdx]); saveData(); updateUI(); renderGrid(); } }
         function showMain() { currentIdx = null; document.getElementById('mainPage').style.display='block'; document.getElementById('detailPage').style.display='none'; renderGrid(); }
         function showShop() { document.getElementById('detailPage').style.display='none'; document.getElementById('shopPage').style.display='block'; renderShopItems(); }
