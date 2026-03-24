@@ -2,21 +2,24 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>6학년 5반 키우기 v1</title>
+    <title>6학년 5반 키우기</title>
     <style>
         :root { --main-blue: #4a90e2; --admin-red: #e74c3c; --gold: #f1c40f; --green: #2ecc71; --purple: #9b59b6; --dark: #34495e; }
         body { font-family: 'Pretendard', sans-serif; background: #f0f4f8; margin: 0; padding: 20px; }
         
         /* 헤더 */
-        .header-stats { background: white; padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header-stats { background: white; padding: 20px; border-radius: 20px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; }
         .total-donation-box { font-size: 1.4rem; color: var(--green); font-weight: bold; }
         
+        /* 관리자 전용 리셋 버튼 스타일 */
+        #adminResetBtn { display: none; position: absolute; top: 10px; right: 20px; background: #eee; color: #999; font-size: 10px; border: 1px solid #ddd; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        #adminResetBtn:hover { background: var(--admin-red); color: white; border-color: var(--admin-red); }
+
         /* 메인 그리드 */
         .grid-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; max-width: 1100px; margin: auto; }
         .student-card { background: white; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.2s; border: 1px solid #eee; position: relative; }
         .student-card:hover { transform: translateY(-5px); border-color: var(--main-blue); }
         
-        /* (신규) 메인화면 정보 표시 스타일 */
         .card-money { margin-top: 5px; font-size: 0.95rem; color: #d35400; font-weight: bold; }
         .personal-stat-sum { margin-top: 5px; font-size: 0.8rem; color: #555; background: #eef5ff; padding: 3px 8px; border-radius: 20px; display: inline-block; font-weight: 600; }
 
@@ -45,10 +48,11 @@
 
     <div id="mainPage">
         <div class="header-stats">
+            <button id="adminResetBtn" onclick="resetAllData()">⚠️ 전체 데이터 초기화</button>
             <h1>🏫 6학년 5반 키우기</h1>
             <div class="total-donation-box">🌟 우리 반 누적 기부액: <span id="totalDonationDisplay">0</span>원</div>
             <div style="margin-top:10px;">
-                <button class="btn" style="background:#888; color:white; font-size:10px;" onclick="resetAllData()">⚠️ 전체 데이터 초기화</button>
+                <small style="color:#aaa;">각 학생 카드를 클릭하여 개인 페이지로 이동하세요.</small>
             </div>
         </div>
         <div id="studentGrid" class="grid-container"></div>
@@ -58,7 +62,7 @@
         <button class="btn" onclick="showMain()">← 전체 명단</button>
         <div style="display: flex; justify-content: space-between; align-items: center; margin: 15px 0;">
             <h2 id="viewName">학생 이름</h2>
-            <button id="adminLoginBtn" class="btn" style="background:#ddd" onclick="toggleAdmin()">🔒 관리자</button>
+            <button id="adminLoginBtn" class="btn" style="background:#ddd" onclick="toggleAdmin()">🔒 관리자 로그인</button>
         </div>
         
         <div style="display: flex; gap: 30px;">
@@ -122,15 +126,15 @@
         let students = [];
 
         function saveData() {
-            localStorage.setItem('class65_students_v14', JSON.stringify(students));
-            localStorage.setItem('class65_titles_v14', JSON.stringify(titleData));
-            localStorage.setItem('class65_potions_v14', JSON.stringify(potionData));
+            localStorage.setItem('class65_students_v15', JSON.stringify(students));
+            localStorage.setItem('class65_titles_v15', JSON.stringify(titleData));
+            localStorage.setItem('class65_potions_v15', JSON.stringify(potionData));
         }
 
         function loadData() {
-            const savedStudents = localStorage.getItem('class65_students_v14');
-            const savedTitles = localStorage.getItem('class65_titles_v14');
-            const savedPotions = localStorage.getItem('class65_potions_v14');
+            const savedStudents = localStorage.getItem('class65_students_v15');
+            const savedTitles = localStorage.getItem('class65_titles_v15');
+            const savedPotions = localStorage.getItem('class65_potions_v15');
             if (savedStudents) { students = JSON.parse(savedStudents); } 
             else {
                 students = Array.from({length: 25}, (_, i) => ({
@@ -143,9 +147,20 @@
             if (savedPotions) potionData = JSON.parse(savedPotions);
         }
 
-        function resetAllData() { if(confirm("데이터를 초기화하시겠습니까?")) { localStorage.clear(); location.reload(); } }
+        // (수정) 전체 초기화 로직: isAdmin 상태가 true일 때만 실제 작동하도록 더블 체크
+        function resetAllData() { 
+            if(!isAdmin) { alert("선생님 로그인이 필요합니다."); return; }
+            if(confirm("❗ 주의: 모든 데이터가 삭제됩니다. 계속하시겠습니까?")) {
+                const check = prompt("삭제를 위해 '삭제승인'이라고 입력하세요.");
+                if(check === "삭제승인") {
+                    localStorage.clear(); 
+                    location.reload(); 
+                } else {
+                    alert("문구가 일치하지 않아 취소되었습니다.");
+                }
+            } 
+        }
 
-        // --- (수정) 메인 렌더링 함수: 잔액 표시 추가 ---
         function renderGrid() {
             const grid = document.getElementById('studentGrid');
             grid.innerHTML = '';
@@ -168,9 +183,24 @@
                 grid.appendChild(card);
             });
             document.getElementById('totalDonationDisplay').innerText = totalDonationSum.toLocaleString();
+            
+            // 관리자 로그인 상태라면 메인에서도 리셋 버튼 노출
+            document.getElementById('adminResetBtn').style.display = isAdmin ? 'block' : 'none';
         }
 
-        // 나머지 상세 로직 (v13과 동일)
+        function toggleAdmin() { 
+            const pw = prompt("관리자 암호를 입력하세요.");
+            if(pw === ADMIN_PW) { 
+                isAdmin = true; 
+                alert("관리자 모드 활성화!");
+                updateUI(); 
+                renderGrid(); // 메인 화면 버튼 상태 업데이트를 위해 호출
+            } else {
+                alert("암호가 틀렸습니다.");
+            }
+        }
+
+        // --- 이하 로직 v14와 동일 ---
         function editNum(e, idx) { e.stopPropagation(); const n = prompt("새 번호", students[idx].num); if(n) { students[idx].num = parseInt(n); saveData(); renderGrid(); } }
         function editName(e, idx) { e.stopPropagation(); const n = prompt("새 이름", students[idx].name); if(n) { students[idx].name = n; saveData(); renderGrid(); } }
         function showDetail(idx) { currentIdx = idx; document.getElementById('mainPage').style.display = 'none'; document.getElementById('detailPage').style.display = 'block'; updateUI(); }
@@ -195,6 +225,7 @@
             }
             document.getElementById('statList').innerHTML = statHtml;
             document.getElementById('adminPanel').style.display = isAdmin ? 'block' : 'none';
+            document.getElementById('adminLoginBtn').style.display = isAdmin ? 'none' : 'block';
         }
 
         function renderShopItems() {
@@ -263,7 +294,6 @@
         function toggleSale(type, id) { const list = (type === 'title') ? titleData : potionData; const item = list.find(i => i.id === id); item.isForSale = !item.isForSale; saveData(); renderShopItems(); }
         function donateMoney() { const a = parseInt(prompt("기부액")); if(a > 0 && students[currentIdx].money >= a) { students[currentIdx].money -= a; students[currentIdx].donation += a; saveData(); updateUI(); alert("감사합니다!"); } }
         function updateMoney(d) { const v = parseInt(document.getElementById('moneyInput').value); if(v) { students[currentIdx].money += (v * d); saveData(); updateUI(); } }
-        function toggleAdmin() { if(prompt("암호") === ADMIN_PW) { isAdmin = true; renderShopItems(); updateUI(); } }
         function showMain() { document.getElementById('mainPage').style.display='block'; document.getElementById('detailPage').style.display='none'; renderGrid(); }
         function showShop() { document.getElementById('detailPage').style.display='none'; document.getElementById('shopPage').style.display='block'; renderShopItems(); }
         function closeShop() { document.getElementById('shopPage').style.display='none'; document.getElementById('detailPage').style.display='block'; updateUI(); }
