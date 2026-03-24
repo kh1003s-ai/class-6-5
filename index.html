@@ -7,7 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
     
     <style>
-        /* 기존 CSS와 동일 (생략 없이 그대로 유지하세요) */
+        /* CSS 스타일링 (원본 유지) */
         :root { --main-blue: #4a90e2; --admin-red: #e74c3c; --gold: #f1c40f; --green: #2ecc71; --purple: #9b59b6; --dark: #34495e; --notice-bg: #fff9db; }
         body { font-family: 'Pretendard', sans-serif; background: #f0f4f8; margin: 0; padding: 20px; }
         .main-wrapper { display: flex; gap: 20px; max-width: 1450px; margin: auto; align-items: flex-start; }
@@ -140,18 +140,19 @@
 
     <script>
         // ---------------------------------------------------------
-        // 1. Firebase 설정 (본인의 코드로 교체하세요)
+        // 1. Firebase 설정 (제공해주신 데이터로 업데이트됨)
         // ---------------------------------------------------------
         const firebaseConfig = {
-  apiKey: "AIzaSyCqE1dKLYBjVnJFtnet7I4NKyKUAma3dgY",
-  authDomain: "class6-5-5faf8.firebaseapp.com",
-  databaseURL: "https://class6-5-5faf8-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "class6-5-5faf8",
-  storageBucket: "class6-5-5faf8.firebasestorage.app",
-  messagingSenderId: "178537841758",
-  appId: "1:178537841758:web:e4cd2fb886d1685900e0cf",
-  measurementId: "G-FW1MKVBY5P"
-};
+            apiKey: "AIzaSyCqE1dKLYBjVnJFtnet7I4NKyKUAma3dgY",
+            authDomain: "class6-5-5faf8.firebaseapp.com",
+            databaseURL: "https://class6-5-5faf8-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "class6-5-5faf8",
+            storageBucket: "class6-5-5faf8.firebasestorage.app",
+            messagingSenderId: "178537841758",
+            appId: "1:178537841758:web:e4cd2fb886d1685900e0cf",
+            measurementId: "G-FW1MKVBY5P"
+        };
+        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
@@ -189,10 +190,9 @@
         ];
 
         // ---------------------------------------------------------
-        // 3. Firebase 연동 함수 (핵심 수정 부분)
+        // 3. Firebase 실시간 동기화 함수
         // ---------------------------------------------------------
 
-        // 데이터 저장 (Cloud)
         function saveData() { 
             const noticeVal = document.getElementById('noticeContent').innerText;
             db.ref('class65_root').set({
@@ -203,7 +203,6 @@
             });
         }
 
-        // 실시간 데이터 감시 (Cloud -> UI)
         function initRealtimeSync() {
             db.ref('class65_root').on('value', (snapshot) => {
                 const data = snapshot.val();
@@ -211,9 +210,8 @@
                     students = data.students || [];
                     titleData = data.titleData || defaultTitles;
                     potionData = data.potionData || defaultPotions;
-                    noticeText = data.noticeText || "반갑습니다! 여기에 공지사항을 입력하세요.";
+                    noticeText = data.noticeText || "반갑습니다! 공지사항을 입력하세요.";
                     
-                    // 관리자가 아닐 때만 공지사항 내용을 덮어씌움 (입력 중 방해 방지)
                     if (!isAdmin) {
                         document.getElementById('noticeContent').innerText = noticeText;
                     }
@@ -223,7 +221,6 @@
                     if (document.getElementById('shopPage').style.display === 'block') renderShopItems();
                     if (isAdmin) renderAdminShop();
                 } else {
-                    // 데이터가 하나도 없을 때 초기값 세팅
                     resetToDefault();
                 }
             });
@@ -243,7 +240,7 @@
         }
 
         // ---------------------------------------------------------
-        // 4. 기존 로직 유지 및 UI 업데이트
+        // 4. UI 렌더링 및 이벤트 로직
         // ---------------------------------------------------------
 
         function renderGrid() {
@@ -345,7 +342,6 @@
             document.getElementById('adminPanel').style.display = isAdmin ? 'block' : 'none';
         }
 
-        // --- 기능 함수들 ---
         function toggleAdmin() {
             if (!isAdmin) { if (prompt("비번") === ADMIN_PW) isAdmin = true; } 
             else isAdmin = false;
@@ -358,7 +354,7 @@
         function updateStat(key, amt) {
             const s = students[currentIdx];
             s.stats[key] = Math.max(0, Math.min(100, s.stats[key] + amt));
-            checkAutoTitles(s); saveData();
+            saveData();
         }
 
         function updateMoney(dir) {
@@ -371,7 +367,7 @@
             if(v > 0 && students[currentIdx].money >= v) {
                 students[currentIdx].money -= v;
                 students[currentIdx].donation += v;
-                checkAutoTitles(students[currentIdx]); saveData();
+                saveData();
             }
         }
 
@@ -380,7 +376,6 @@
             if(s.money < t.price) return alert("돈 부족");
             if(s.myTitles.some(m => m.id === t.id)) return alert("이미 있음");
             s.money -= t.price; s.myTitles.push(t);
-            // 능력치 보너스 로직 (기존과 동일)
             if(t.id === 't1') Object.keys(s.stats).forEach(k => s.stats[k] = Math.min(100, s.stats[k]+1));
             saveData(); alert("구매 완료!");
         }
@@ -392,20 +387,10 @@
             saveData();
         }
 
-        function checkAutoTitles(s) {
-            const sum = Object.values(s.stats).reduce((a, b) => a + b, 0);
-            if (sum >= 350 && !s.myTitles.some(t => t.id === 't_all')) {
-                s.myTitles.push({ id: 't_all', name: '다재다능', icon: '🌟', effect: '보너스' });
-            }
-            // 필요한 자동 업적들을 여기에 추가...
-        }
-
-        // 상점 관리 기능
         function renderAdminShop() {
             const grid = document.getElementById('adminShopGrid');
             grid.innerHTML = '';
-            [...titleData, ...potionData].forEach((item, idx) => {
-                const isTitle = !!item.effect;
+            [...titleData, ...potionData].forEach((item) => {
                 const card = document.createElement('div');
                 card.className = `admin-item-card ${!item.onSale ? 'off-item' : ''}`;
                 card.innerHTML = `<b>${item.icon} ${item.name}</b><br>
@@ -430,6 +415,7 @@
         function showMain() { currentIdx = null; document.getElementById('mainPage').style.display='block'; document.getElementById('detailPage').style.display='none'; }
         function showShop() { document.getElementById('detailPage').style.display='none'; document.getElementById('shopPage').style.display='block'; renderShopItems(); }
         function closeShop() { document.getElementById('shopPage').style.display='none'; document.getElementById('detailPage').style.display='block'; }
+        
         function renderShopItems() {
             const s = students[currentIdx];
             let tH = '';
@@ -454,9 +440,9 @@
         function editNum(e, i) { e.stopPropagation(); const n = prompt("새 번호", students[i].num); if(n) { students[i].num = parseInt(n); saveData(); } }
         function editName(e, i) { e.stopPropagation(); const n = prompt("새 이름", students[i].name); if(n) { students[i].name = n; saveData(); } }
         function resetStudentPw() { const newPw = document.getElementById('newStudentPw').value; if(newPw) { students[currentIdx].pw = newPw; saveData(); alert("변경됨"); } }
-        function resetAllData() { if(isAdmin && confirm("초기화?") && prompt("삭제승인 입력") === "삭제승인") { resetToDefault(); } }
+        function resetAllData() { if(isAdmin && confirm("정말 모든 데이터를 초기화하시겠습니까?") && prompt("삭제승인 이라고 입력하세요") === "삭제승인") { resetToDefault(); } }
 
-        // 초기화 실행
+        // 초기 동기화 시작
         initRealtimeSync();
 
     </script>
