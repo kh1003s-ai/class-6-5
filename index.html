@@ -257,6 +257,18 @@
             students.forEach((s, idx) => { 
                 totalD += s.donation; 
                 const statSum = Object.values(s.stats).reduce((a, b) => a + b, 0); 
+                
+                // 세부 능력치 표시용 HTML 생성
+                const detailStatsHtml = `
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; font-size: 0.65rem; color: #666; margin-top: 8px; padding-top: 8px; border-top: 1px dotted #eee;">
+                        <span>❤️${s.stats['체력']}</span>
+                        <span>💎${s.stats['지력']}</span>
+                        <span>💡${s.stats['창의성']}</span>
+                        <span>🌀${s.stats['정신력']}</span>
+                        <span>🍀${s.stats['인성']}</span>
+                    </div>
+                `;
+
                 const card = document.createElement('div'); 
                 card.className = `student-card ${idx === 24 ? 'teacher-card' : (top3Ids.includes(s.id) ? 'gold-card' : '')}`; 
                 card.innerHTML = ` 
@@ -264,7 +276,8 @@
                     <div style="font-weight:bold; font-size:1.1rem;">${s.name}</div> 
                     <div class="card-titles">${(s.myTitles || []).map(t => `<span>${t.icon}</span>`).join('')}</div> 
                     <div class="card-money">💰 ${s.money.toLocaleString()}원</div> 
-                    <div><span class="personal-stat-sum">⚡ ${statSum}</span></div> 
+                    <div style="margin-bottom: 5px;"><span class="personal-stat-sum">⚡ 총합 ${statSum}</span></div> 
+                    ${detailStatsHtml}
                     ${isAdmin ? `<div class="edit-area"><span class="edit-btn" onclick="editNum(event, ${idx})">번호</span><span class="edit-btn" onclick="editName(event, ${idx})">이름</span></div>` : ''} 
                 `; 
                 card.onclick = () => showDetail(idx); 
