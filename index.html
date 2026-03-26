@@ -184,7 +184,6 @@
             { id: 's6', name: '다재다능', icon: '🌟', price: 0, effect: '모든 능력치 +7', onSale: false, isAuto: true },
             { id: 's7', name: '만렙달성', icon: '🌈', price: 0, effect: '전설의 경지', onSale: false, isAuto: true },
             { id: 's8', name: '기부천사', icon: '👼', price: 0, effect: '모든 능력치 +5', onSale: false, isAuto: true }
-            { id: 's9', name: '칭호 콜렉터', icon: '📚', price: 0, effect: '모든 능력치 +5', onSale: false, isAuto: true }
         ]; 
 
         const defaultPotions = [ 
@@ -330,8 +329,7 @@
                 { id: 's6', cond: statSum >= 350, effect: () => Object.keys(s.stats).forEach(k => s.stats[k] += 7) },
                 { id: 's7', cond: statSum >= 500, effect: () => {} }, // 만렙은 추가 스탯 없음
                 { id: 's8', cond: s.donation >= 30000, effect: () => Object.keys(s.stats).forEach(k => s.stats[k] += 5) }
-                { id: 's9', cond: s.myTitles.length >= 7, effect: () => Object.keys(s.stats).forEach(k => s.stats[k] += 5) }
-    ];
+            ];
 
             conditions.forEach(c => {
                 const alreadyHas = s.myTitles.some(t => t.id === c.id);
