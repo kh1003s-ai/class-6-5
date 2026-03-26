@@ -522,35 +522,23 @@
         } 
 
         // 6. 관리자 상점 관리 
-        function renderAdminShop() { 
-    const grid = document.getElementById('adminShopGrid'); 
-    if(!grid) return;
-    grid.innerHTML = ''; 
-    
-    // DB 데이터와 기본 데이터(자동칭호 포함)를 합치거나, 
-    // 기본 데이터(defaultTitles)를 기준으로 현재 상태를 표시합니다.
-    const allTitles = defaultTitles; // 자동 칭호가 포함된 원본 리스트 사용
-    const combinedData = [...allTitles, ...potionData];
-
-    combinedData.forEach((item) => { 
-        const card = document.createElement('div'); 
-        // 자동 지급 칭호와 판매 중지된 아이템 구분 스타일
-        card.className = `admin-item-card ${(!item.onSale && !item.isAuto) ? 'off-item' : ''}`; 
-        
-        let controlHtml = '';
-        if (item.isAuto) {
-            controlHtml = `<span style="color:blue; font-weight:bold;">[자동지급 조건부 칭호]</span><br>
-                           <small style="color:#888;">조건 충족 시 자동 부여됨</small>`;
-        } else {
-            controlHtml = `가격: <input type="number" id="p-edit-${item.id}" value="${item.price}" style="width:70px"> 
-                           <button onclick="editPrice('${item.id}')">수정</button> 
-                           <button onclick="toggleItem('${item.id}')">${item.onSale ? '품절처리' : '판매개시'}</button>`;
-        }
-
-        card.innerHTML = `<b>${item.icon} ${item.name}</b><br>${controlHtml}`; 
-        grid.appendChild(card); 
-    }); 
-}
+         function renderAdminShop() { 
+            const grid = document.getElementById('adminShopGrid'); 
+            if(!grid) return;
+            grid.innerHTML = ''; 
+            
+            // 모든 데이터 통합 관리
+            const combinedData = [...titleData, ...potionData];
+            combinedData.forEach((item) => { 
+                const card = document.createElement('div'); 
+                card.className = `admin-item-card ${(!item.onSale && !item.isAuto) ? 'off-item' : ''}`; 
+                card.innerHTML = `<b>${item.icon} ${item.name}</b><br> 
+                    ${item.isAuto ? '<span style="color:blue">[자동지급]</span>' : `가격: <input type="number" id="p-edit-${item.id}" value="${item.price}" style="width:70px"> 
+                    <button onclick="editPrice('${item.id}')">수정</button> 
+                    <button onclick="toggleItem('${item.id}')">${item.onSale ? '품절처리' : '판매개시'}</button>`}`; 
+                grid.appendChild(card); 
+            }); 
+        } 
 
         function editPrice(id) { 
             const newP = parseInt(document.getElementById(`p-edit-${id}`).value); 
