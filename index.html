@@ -39,7 +39,7 @@
     line-height: 1.6; 
     min-height: 100px; 
     outline: none; 
-    text-align: left; 
+    text-align: left;
     display: block;
 }
         .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 15px; } 
@@ -125,23 +125,20 @@
                 <h3>📊 능력치</h3> 
                 <div id="statList"></div> 
                 <div id="adminPanel" style="display:none; background:#fff5f5; padding:15px; border-radius:10px; margin-top:15px; border: 1px solid #ffcfcf;"> 
-    <div style="margin-bottom:15px;"><strong style="color:var(--admin-red)">🛠 돈 조정</strong><br> 
-        <input type="number" id="moneyInput" style="width:80px; padding:5px;"> 원 
-        <button class="btn btn-blue" onclick="updateMoney(1)">지급</button> 
-        <button class="btn" style="background:var(--admin-red); color:white;" onclick="updateMoney(-1)">차감</button> 
-    </div>
-
-    <div id="adminStatControls"></div> 
-
-    <div style="margin-top:15px;"><strong style="color:var(--admin-red)">🔑 비번 관리</strong><br> 
-        <input type="text" id="newStudentPw" style="width:120px; padding:5px;"> 
-        <button class="btn" style="background:var(--dark); color:white; padding:5px 10px;" onclick="resetStudentPw()">재설정</button> 
-    </div>
-
-    <div style="margin-top:20px; padding-top:10px; border-top:1px dashed #ffcfcf;">
-        <button class="btn" style="background:orange; color:white; width:100%;" onclick="resetIndividualData()">⚠️ 이 학생만 초기화</button>
-    </div>
-</div>
+                    <div style="margin-bottom:15px;"><strong style="color:var(--admin-red)">🛠 돈 조정</strong><br> 
+                        <input type="number" id="moneyInput" style="width:80px; padding:5px;"> 원 
+                        <button class="btn btn-blue" onclick="updateMoney(1)">지급</button> 
+                        <button class="btn" style="background:var(--admin-red); color:white;" onclick="updateMoney(-1)">차감</button> 
+                    </div> 
+                    <div id="adminStatControls"></div> 
+                    <div style="margin-top:15px;"><strong style="color:var(--admin-red)">🔑 비번 관리</strong><br> 
+                        <input type="text" id="newStudentPw" style="width:120px; padding:5px;"> 
+                        <button class="btn" style="background:var(--dark); color:white; padding:5px 10px;" onclick="resetStudentPw()">재설정</button> 
+                    </div> 
+                </div> 
+            </div> 
+        </div> 
+    </div> 
 
     <div id="shopPage"> 
         <button class="btn" onclick="closeShop()">← 뒤로가기</button> 
@@ -271,18 +268,6 @@
             students.forEach((s, idx) => { 
                 totalD += s.donation; 
                 const statSum = Object.values(s.stats).reduce((a, b) => a + b, 0); 
-                
-                // 세부 능력치 표시용 HTML 생성
-                const detailStatsHtml = `
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; font-size: 0.65rem; color: #666; margin-top: 8px; padding-top: 8px; border-top: 1px dotted #eee;">
-                        <span>❤️${s.stats['체력']}</span>
-                        <span>💎${s.stats['지력']}</span>
-                        <span>💡${s.stats['창의성']}</span>
-                        <span>🌀${s.stats['정신력']}</span>
-                        <span>🍀${s.stats['인성']}</span>
-                    </div>
-                `;
-
                 const card = document.createElement('div'); 
                 card.className = `student-card ${idx === 24 ? 'teacher-card' : (top3Ids.includes(s.id) ? 'gold-card' : '')}`; 
                 card.innerHTML = ` 
@@ -290,8 +275,7 @@
                     <div style="font-weight:bold; font-size:1.1rem;">${s.name}</div> 
                     <div class="card-titles">${(s.myTitles || []).map(t => `<span>${t.icon}</span>`).join('')}</div> 
                     <div class="card-money">💰 ${s.money.toLocaleString()}원</div> 
-                    <div style="margin-bottom: 5px;"><span class="personal-stat-sum">⚡ 총합 ${statSum}</span></div> 
-                    ${detailStatsHtml}
+                    <div><span class="personal-stat-sum">⚡ ${statSum}</span></div> 
                     ${isAdmin ? `<div class="edit-area"><span class="edit-btn" onclick="editNum(event, ${idx})">번호</span><span class="edit-btn" onclick="editName(event, ${idx})">이름</span></div>` : ''} 
                 `; 
                 card.onclick = () => showDetail(idx); 
@@ -347,10 +331,11 @@
 ];
 
             conditions.forEach(c => {
-                const alreadyHas = s.myTitles.some(t => t.id === c.id);
-                if (c.cond && !alreadyHas) {
-                    const titleInfo = defaultTitles.find(dt => dt.id === c.id);
-                    if(titleInfo) {
+        const alreadyHas = s.myTitles.some(t => t.id === c.id);
+        if (c.cond && !alreadyHas) {
+            // 중요: defaultTitles에서 해당 칭호 정보를 명확히 가져옵니다.
+            const titleInfo = defaultTitles.find(dt => dt.id === c.id);
+            if(titleInfo) {
                 s.myTitles.push(titleInfo);
                 c.effect();
                 updated = true;
@@ -505,8 +490,8 @@
     }
     
     saveData(); 
-    alert(`[${t.name}] 구매 완료!`); 
-    checkAutoTitles(currentIdx); // 구매 후 즉시 '칭호 콜렉터' 체크
+    alert(`[${t.name}] 구매 완료! 해당 능력치가 상승했습니다.`); 
+    checkAutoTitles(currentIdx); 
 }
 
         function buyPotion(id) { 
@@ -522,7 +507,7 @@
         } 
 
         // 6. 관리자 상점 관리 
-         function renderAdminShop() { 
+        function renderAdminShop() { 
             const grid = document.getElementById('adminShopGrid'); 
             if(!grid) return;
             grid.innerHTML = ''; 
@@ -560,26 +545,6 @@
         function editName(e, i) { e.stopPropagation(); const n = prompt("새 이름", students[i].name); if(n) { students[i].name = n; saveData(); } } 
         function resetStudentPw() { const newPw = document.getElementById('newStudentPw').value; if(newPw) { students[currentIdx].pw = newPw; saveData(); alert("변경됨"); } } 
         function resetAllData() { if(isAdmin && confirm("정말 모든 데이터를 초기화하시겠습니까?") && prompt("삭제승인 이라고 입력하세요") === "삭제승인") { resetToDefault(); } } 
-       function resetIndividualData() {
-    if (!isAdmin) return; // 관리자가 아니면 차단
-    
-    const s = students[currentIdx];
-    // 실수 방지를 위한 확인창
-    const confirmMsg = `[${s.name}] 학생의 모든 데이터를 초기화할까요?\n(돈 1만 원, 능력치 5, 칭호 삭제, 비번 초기화)`;
-    
-    if (confirm(confirmMsg)) {
-        // 현재 선택된 학생(currentIdx)의 데이터만 기본값으로 셋팅
-        students[currentIdx].money = 10000;
-        students[currentIdx].donation = 0;
-        students[currentIdx].stats = { "체력": 5, "지력": 5, "창의성": 5, "정신력": 5, "인성": 5 };
-        students[currentIdx].myTitles = [];
-        students[currentIdx].pw = null; // 다음 접속 시 비번 재설정 가능
-        
-        saveData(); // Firebase에 저장
-        alert("초기화되었습니다.");
-        updateUI(); // 현재 상세 페이지 화면 갱신
-    }
-}
 
         initRealtimeSync(); 
     </script> 
