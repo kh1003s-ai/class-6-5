@@ -125,20 +125,23 @@
                 <h3>📊 능력치</h3> 
                 <div id="statList"></div> 
                 <div id="adminPanel" style="display:none; background:#fff5f5; padding:15px; border-radius:10px; margin-top:15px; border: 1px solid #ffcfcf;"> 
-                    <div style="margin-bottom:15px;"><strong style="color:var(--admin-red)">🛠 돈 조정</strong><br> 
-                        <input type="number" id="moneyInput" style="width:80px; padding:5px;"> 원 
-                        <button class="btn btn-blue" onclick="updateMoney(1)">지급</button> 
-                        <button class="btn" style="background:var(--admin-red); color:white;" onclick="updateMoney(-1)">차감</button> 
-                    </div> 
-                    <div id="adminStatControls"></div> 
-                    <div style="margin-top:15px;"><strong style="color:var(--admin-red)">🔑 비번 관리</strong><br> 
-                        <input type="text" id="newStudentPw" style="width:120px; padding:5px;"> 
-                        <button class="btn" style="background:var(--dark); color:white; padding:5px 10px;" onclick="resetStudentPw()">재설정</button> 
-                    </div> 
-                </div> 
-            </div> 
-        </div> 
-    </div> 
+    <div style="margin-bottom:15px;"><strong style="color:var(--admin-red)">🛠 돈 조정</strong><br> 
+        <input type="number" id="moneyInput" style="width:80px; padding:5px;"> 원 
+        <button class="btn btn-blue" onclick="updateMoney(1)">지급</button> 
+        <button class="btn" style="background:var(--admin-red); color:white;" onclick="updateMoney(-1)">차감</button> 
+    </div>
+
+    <div id="adminStatControls"></div> 
+
+    <div style="margin-top:15px;"><strong style="color:var(--admin-red)">🔑 비번 관리</strong><br> 
+        <input type="text" id="newStudentPw" style="width:120px; padding:5px;"> 
+        <button class="btn" style="background:var(--dark); color:white; padding:5px 10px;" onclick="resetStudentPw()">재설정</button> 
+    </div>
+
+    <div style="margin-top:20px; padding-top:10px; border-top:1px dashed #ffcfcf;">
+        <button class="btn" style="background:orange; color:white; width:100%;" onclick="resetIndividualData()">⚠️ 이 학생만 초기화</button>
+    </div>
+</div>
 
     <div id="shopPage"> 
         <button class="btn" onclick="closeShop()">← 뒤로가기</button> 
@@ -557,6 +560,26 @@
         function editName(e, i) { e.stopPropagation(); const n = prompt("새 이름", students[i].name); if(n) { students[i].name = n; saveData(); } } 
         function resetStudentPw() { const newPw = document.getElementById('newStudentPw').value; if(newPw) { students[currentIdx].pw = newPw; saveData(); alert("변경됨"); } } 
         function resetAllData() { if(isAdmin && confirm("정말 모든 데이터를 초기화하시겠습니까?") && prompt("삭제승인 이라고 입력하세요") === "삭제승인") { resetToDefault(); } } 
+       function resetIndividualData() {
+    if (!isAdmin) return; // 관리자가 아니면 차단
+    
+    const s = students[currentIdx];
+    // 실수 방지를 위한 확인창
+    const confirmMsg = `[${s.name}] 학생의 모든 데이터를 초기화할까요?\n(돈 1만 원, 능력치 5, 칭호 삭제, 비번 초기화)`;
+    
+    if (confirm(confirmMsg)) {
+        // 현재 선택된 학생(currentIdx)의 데이터만 기본값으로 셋팅
+        students[currentIdx].money = 10000;
+        students[currentIdx].donation = 0;
+        students[currentIdx].stats = { "체력": 5, "지력": 5, "창의성": 5, "정신력": 5, "인성": 5 };
+        students[currentIdx].myTitles = [];
+        students[currentIdx].pw = null; // 다음 접속 시 비번 재설정 가능
+        
+        saveData(); // Firebase에 저장
+        alert("초기화되었습니다.");
+        updateUI(); // 현재 상세 페이지 화면 갱신
+    }
+}
 
         initRealtimeSync(); 
     </script> 
