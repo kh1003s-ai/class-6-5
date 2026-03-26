@@ -209,29 +209,51 @@
         } 
 
         function initRealtimeSync() { 
-            db.ref('class65_root').on('value', (snapshot) => { 
-                const data = snapshot.val(); 
-                if (data) { 
-                    students = data.students || []; 
-                    titleData = data.titleData || defaultTitles; 
-                    potionData = data.potionData || defaultPotions; 
-                    noticeText = data.noticeText || "반갑습니다! 공지사항을 입력하세요."; 
-                    
-                    if (!isAdmin) { 
-                        document.getElementById('noticeContent').innerText = noticeText; 
-                    } 
-                    
-                    renderGrid(); 
-                    if (currentIdx !== null) {
-                        updateUI(); 
-                        if (document.getElementById('shopPage').style.display === 'block') renderShopItems(); 
-                    }
-                    if (isAdmin) renderAdminShop(); 
-                } else { 
-                    resetToDefault(); 
-                } 
-            }); 
+    db.ref('class65_root').on('value', (snapshot) => { 
+        const data = snapshot.val(); 
+        if (data) { 
+            students = data.students || []; 
+            // 서버에 데이터가 존재하면 기본값 대신 서버 데이터를 할당
+            titleData = (data.titleData && data.titleData.length > 0) ? data.titleData : [...defaultTitles]; 
+            potionData = (data.potionData && data.potionData.length > 0) ? data.potionData : [...defaultPotions]; 
+            noticeText = data.noticeText || "반갑습니다! 공지사항을 입력하세요."; 
+            
+            if (!isAdmin) { 
+                document.getElementById('noticeContent').innerText = noticeText; 
+            } 
+            
+            renderGrid(); 
+            if (currentIdx !== null) updateUI(); 
+            if (document.getElementById('shopPage').style.display === 'block') renderShopItems(); 
+            if (isAdmin) renderAdminShop(); 
+        } else { 
+            // 서버에 아예 데이터가 없는 생초기 상태일 때만 실행
+            resetToDefault(); 
         } 
+    });
+}
+
+function saveData() {  
+    const noticeVal = document.getElementById('noticeContent').innerText;
+    db.ref('class65_root').set({ 
+        students: students, 
+        noticeText: noticeVal, 
+        titleData: titleData,  // 수정된 가격 정보 포함
+        potionData: potionData // 수정된 포션 정보 포함
+    }); 
+}
+
+function resetToDefault() { 
+    students = defaultStudents.map(s => ({ 
+        ...s, money: 10000, donation: 0, 
+        stats: { "체력": 5, "지력": 5, "창의성": 5, "정신력": 5, "사회성": 5 }, 
+        myTitles: [], currentTitle: null, items: {} 
+    })); 
+    titleData = [...defaultTitles]; 
+    potionData = [...defaultPotions]; 
+    saveData(); 
+    alert("전체 데이터가 기본값으로 초기화되었습니다.");
+}
 
         function resetToDefault() { 
             students = Array.from({length: 25}, (_, i) => ({ 
@@ -552,5 +574,7 @@
 
         initRealtimeSync(); 
     </script> 
+</body> 
+</html>
 </body> 
 </html>
