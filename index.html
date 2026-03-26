@@ -80,11 +80,10 @@
                     </div> 
                 </div> 
                 <div id="studentGrid" class="grid-container"></div> 
-                <div id="mainAdminShopPanel" style="display:none; background:white; padding:20px; border-radius:20px; margin-top:20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 2px solid #ffcfcf;">
-    <h3 style="color:var(--admin-red); margin-top:0;">🛒 상점 실시간 관리 (Admin)</h3>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-        <div id="adminTitleControl"></div> <div id="adminPotionControl"></div> </div>
-</div> 
+                <div id="adminShopPanel" class="admin-shop-manager"> 
+                    <h2 style="color:var(--admin-red); margin-top:0;">🛠️ 상점 실시간 관리</h2> 
+                    <div class="admin-shop-grid" id="adminShopGrid"></div> 
+                </div> 
             </div> 
             <div class="ranking-side"> 
                 <div class="ranking-section"> 
@@ -134,19 +133,13 @@
         </div>
     </div>
 
-    <div id="shopPage" style="display: none; max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);"> 
-    <button class="btn" onclick="closeShop()">← 뒤로가기</button> 
-    
-    <div id="adminShopNotice" style="display:none; margin-top:15px; padding:10px; background:#fff5f5; border:1px solid #ffcfcf; border-radius:10px; color:var(--admin-red); font-weight:bold; text-align:center;">
-        🛠️ 관리자 모드: 아이템 하단의 버튼으로 가격과 품절 상태를 관리하세요.
+    <div id="shopPage"> 
+        <button class="btn" onclick="closeShop()">← 뒤로가기</button> 
+        <h3 style="border-left:5px solid var(--main-blue); padding-left:10px; margin: 25px 0;">🎖️ 칭호 상점</h3> 
+        <div id="titleShopGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;"></div> 
+        <h3 style="border-left:5px solid var(--purple); padding-left:10px; margin: 40px 0 25px;">🧪 포션 상점</h3> 
+        <div id="potionShopGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;"></div> 
     </div>
-
-    <h3 style="border-left:5px solid var(--main-blue); padding-left:10px; margin: 25px 0;">🎖️ 칭호 상점</h3> 
-    <div id="titleShopGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;"></div> 
-
-    <h3 style="border-left:5px solid var(--purple); padding-left:10px; margin: 40px 0 25px;">🧪 포션 상점</h3> 
-    <div id="potionShopGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;"></div> 
-</div>
 
     <script> 
         // 1. Firebase 설정
@@ -176,7 +169,7 @@
 
         const defaultTitles = [ 
             { id: 't1', name: '6학년을 시작하는 자', icon: '🌱', price: 3000, effect: '모든 능력치 +1', onSale: true }, 
-            { id: 't2', name: '6학년을 조금 아는 자', icon: '🌿', price: 15000, effect: '모든 능력치 +5', onSale: true }, 
+            { id: 't2', name: '6학년을 조금 아는 자', icon: '🌿', price: 10000, effect: '모든 능력치 +5', onSale: true }, 
             { id: 't3', name: '6학년을 지배하는 자', icon: '🌳', price: 30000, effect: '모든 능력치 +10', onSale: true }, 
             { id: 't10', name: '재력과시', icon: '💎', price: 50000, effect: '모든 능력치 +20', onSale: true }, 
             { id: 't4', name: '6학년 5반의 군주', icon: '👑', price: 999999999, effect: '모든 능력치 100 달성', onSale: true }, 
@@ -206,14 +199,14 @@
 
         // 3. Firebase 실시간 동기화 
         function saveData() {  
-    const noticeVal = document.getElementById('noticeContent').innerText;
-    db.ref('class65_root').set({ 
-        students: students, 
-        noticeText: noticeVal, 
-        titleData: titleData,  // 이 줄이 있어야 가격이 저장됩니다.
-        potionData: potionData // 이 줄이 있어야 품절 여부가 저장됩니다.
-    }); 
-}
+            const noticeVal = document.getElementById('noticeContent').innerText; 
+            db.ref('class65_root').set({ 
+                students, 
+                noticeText: noticeVal, 
+                titleData, 
+                potionData 
+            }); 
+        } 
 
         function initRealtimeSync() { 
     db.ref('class65_root').on('value', (snapshot) => { 
@@ -458,56 +451,27 @@ function resetToDefault() {
         } 
 
         function renderShopItems() { 
-    const tGrid = document.getElementById('titleShopGrid'); 
-    const pGrid = document.getElementById('potionShopGrid'); 
-    
-    // 관리자면 안내 문구 보이기
-    if(document.getElementById('adminShopNotice')) {
-        document.getElementById('adminShopNotice').style.display = isAdmin ? 'block' : 'none';
-    }
+            const s = students[currentIdx]; 
+            if(!s) return;
 
-    // 1. 칭호 상점 렌더링
-    tGrid.innerHTML = titleData.map(t => { 
-        if(!t.onSale && !isAdmin) return ''; // 품절인데 학생이면 숨김
-        return `
-            <div class="shop-item" style="${!t.onSale ? 'opacity:0.6; filter:grayscale(1);' : ''}">
-                <div style="font-size:2rem; margin-bottom:10px;">${t.icon}</div>
-                <div style="font-weight:bold; margin-bottom:5px;">${t.name}</div>
-                <div style="color:var(--main-blue); font-weight:bold; margin-bottom:10px;">${t.price.toLocaleString()}원</div>
-                ${t.onSale 
-                    ? `<button class="btn btn-blue" style="width:100%" onclick="buyTitle('${t.id}')">구매하기</button>` 
-                    : `<button class="btn" style="width:100%; background:#ccc;" disabled>품절</button>`}
-                
-                ${isAdmin ? `
-                    <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #eee; display:flex; gap:5px;">
-                        <button class="btn" style="padding:2px; font-size:11px; flex:1;" onclick="editPrice('${t.id}')">가격</button>
-                        <button class="btn" style="padding:2px; font-size:11px; flex:1; background:${t.onSale?'#ff4d4d':'#2ecc71'}; color:white;" onclick="toggleItem('${t.id}')">${t.onSale?'품절':'판매'}</button>
-                    </div>
-                ` : ''}
-            </div>`; 
-    }).join(''); 
-
-    // 2. 포션 상점 렌더링
-    pGrid.innerHTML = potionData.map(p => { 
-        if(!p.onSale && !isAdmin) return ''; 
-        return `
-            <div class="shop-item" style="${!p.onSale ? 'opacity:0.6; filter:grayscale(1);' : ''}">
-                <div style="font-size:2rem; margin-bottom:10px;">${p.icon}</div>
-                <div style="font-weight:bold; margin-bottom:5px;">${p.name}</div>
-                <div style="color:var(--purple); font-weight:bold; margin-bottom:10px;">${p.price.toLocaleString()}원</div>
-                ${p.onSale 
-                    ? `<button class="btn" style="width:100%; background:var(--purple); color:white;" onclick="buyPotion('${p.id}')">구매하기</button>` 
-                    : `<button class="btn" style="width:100%; background:#ccc;" disabled>품절</button>`}
-                
-                ${isAdmin ? `
-                    <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #eee; display:flex; gap:5px;">
-                        <button class="btn" style="padding:2px; font-size:11px; flex:1;" onclick="editPrice('${p.id}')">가격</button>
-                        <button class="btn" style="padding:2px; font-size:11px; flex:1; background:${p.onSale?'#ff4d4d':'#2ecc71'}; color:white;" onclick="toggleItem('${p.id}')">${p.onSale?'품절':'판매'}</button>
-                    </div>
-                ` : ''}
-            </div>`; 
-    }).join(''); 
-} 
+            let tH = ''; 
+            titleData.filter(t => t.onSale).forEach(t => { 
+                const owned = (s.myTitles || []).some(m => m.id === t.id); 
+                tH += `<div class="item-card"><div style="font-size:25px">${t.icon}</div> 
+                    <strong>${t.name}</strong><br><small>${t.effect}</small><br> 
+                    <span style="color:var(--gold); font-weight:bold;">${t.price.toLocaleString()}원</span><br> 
+                    ${owned ? '<b>보유중</b>' : `<button class="btn btn-blue" onclick="buyTitle('${t.id}')">구매</button>`}</div>`; 
+            }); 
+            document.getElementById('titleShopGrid').innerHTML = tH || '판매 중인 칭호가 없습니다.'; 
+            
+            let pH = ''; 
+            potionData.forEach(p => { 
+                pH += `<div class="item-card ${!p.onSale ? 'sold-out' : ''}"><div style="font-size:25px">${p.icon}</div> 
+                    <strong>${p.name}</strong><br><span style="color:var(--purple); font-weight:bold;">${p.price.toLocaleString()}원</span><br> 
+                    ${!p.onSale ? '<b>품절</b>' : `<button class="btn" style="background:var(--purple); color:white;" onclick="buyPotion('${p.id}')">구매</button>`}</div>`; 
+            }); 
+            document.getElementById('potionShopGrid').innerHTML = pH || '표시할 상품이 없습니다.'; 
+        } 
 
         function buyTitle(id) { 
             const t = titleData.find(x => x.id === id); 
@@ -549,63 +513,46 @@ function resetToDefault() {
             checkAutoTitles(currentIdx);
         } 
 
-        function renderAdminShop() {
-    if (!isAdmin) return;
+        function renderAdminShop() { 
+    const grid = document.getElementById('adminShopGrid'); 
+    if(!grid) return;
+    grid.innerHTML = ''; 
+    
+    // DB 데이터와 기본 데이터(자동칭호 포함)를 합치거나, 
+    // 기본 데이터(defaultTitles)를 기준으로 현재 상태를 표시합니다.
+    const allTitles = defaultTitles; // 자동 칭호가 포함된 원본 리스트 사용
+    const combinedData = [...allTitles, ...potionData];
 
-    // 칭호 관리 (메인 화면 패널용)
-    let tH = '<h4>🎖️ 칭호 가격/재고 관리</h4>';
-    titleData.forEach(t => {
-        const statusText = t.onSale ? '<span style="color:green">[판매중]</span>' : '<span style="color:red">[품절]</span>';
-        tH += `
-            <div style="margin-bottom:10px; padding:10px; background:#f9f9f9; border-radius:10px; border:1px solid #eee;">
-                ${t.icon} <strong>${t.name}</strong> ${statusText}<br>
-                가격: <span style="font-weight:bold; color:var(--main-blue);">${t.price.toLocaleString()}원</span><br>
-                <button class="btn" style="padding:3px 8px; font-size:11px; margin-top:5px;" onclick="editPrice('${t.id}')">가격 수정</button>
-                <button class="btn" style="padding:3px 8px; font-size:11px; margin-top:5px; background:${t.onSale?'#ff4d4d':'#2ecc71'}; color:white;" onclick="toggleItem('${t.id}')">
-                    ${t.onSale?'품절 처리':'판매 개시'}
-                </button>
-            </div>`;
-    });
-    const tContainer = document.getElementById('adminTitleControl');
-    if(tContainer) tContainer.innerHTML = tH;
+    combinedData.forEach((item) => { 
+        const card = document.createElement('div'); 
+        // 자동 지급 칭호와 판매 중지된 아이템 구분 스타일
+        card.className = `admin-item-card ${(!item.onSale && !item.isAuto) ? 'off-item' : ''}`; 
+        
+        let controlHtml = '';
+        if (item.isAuto) {
+            controlHtml = `<span style="color:blue; font-weight:bold;">[자동지급 조건부 칭호]</span><br>
+                           <small style="color:#888;">조건 충족 시 자동 부여됨</small>`;
+        } else {
+            controlHtml = `가격: <input type="number" id="p-edit-${item.id}" value="${item.price}" style="width:70px"> 
+                           <button onclick="editPrice('${item.id}')">수정</button> 
+                           <button onclick="toggleItem('${item.id}')">${item.onSale ? '품절처리' : '판매개시'}</button>`;
+        }
 
-    // 포션 관리 (메인 화면 패널용)
-    let pH = '<h4>🧪 포션 가격/재고 관리</h4>';
-    potionData.forEach(p => {
-        const statusText = p.onSale ? '<span style="color:green">[판매중]</span>' : '<span style="color:red">[품절]</span>';
-        pH += `
-            <div style="margin-bottom:10px; padding:10px; background:#f9f9f9; border-radius:10px; border:1px solid #eee;">
-                ${p.icon} <strong>${p.name}</strong> ${statusText}<br>
-                가격: <span style="font-weight:bold; color:var(--purple);">${p.price.toLocaleString()}원</span><br>
-                <button class="btn" style="padding:3px 8px; font-size:11px; margin-top:5px;" onclick="editPrice('${p.id}')">가격 수정</button>
-                <button class="btn" style="padding:3px 8px; font-size:11px; margin-top:5px; background:${p.onSale?'#ff4d4d':'#2ecc71'}; color:white;" onclick="toggleItem('${p.id}')">
-                    ${p.onSale?'품절 처리':'판매 개시'}
-                </button>
-            </div>`;
-    });
-    const pContainer = document.getElementById('adminPotionControl');
-    if(pContainer) pContainer.innerHTML = pH;
+        card.innerHTML = `<b>${item.icon} ${item.name}</b><br>${controlHtml}`; 
+        grid.appendChild(card); 
+    }); 
 }
 
         function editPrice(id) { 
-    let target = titleData.find(x => x.id === id) || potionData.find(x => x.id === id);
-    if (!target) return;
-    const newP = prompt(`[${target.name}]의 새 가격을 입력하세요:`, target.price); 
-    if (newP !== null && newP !== "") { 
-        target.price = parseInt(newP); 
-        saveData();           // 서버 저장
-        renderShopItems();    // 상점 화면 즉시 갱신
-    } 
-}
+            const newP = parseInt(document.getElementById(`p-edit-${id}`).value); 
+            let target = titleData.find(x => x.id === id) || potionData.find(x => x.id === id);
+            if(target) { target.price = newP; saveData(); alert("수정됨"); } 
+        } 
 
         function toggleItem(id) { 
-    let target = titleData.find(x => x.id === id) || potionData.find(x => x.id === id);
-    if(target) { 
-        target.onSale = !target.onSale; 
-        saveData();           // 서버 저장
-        renderShopItems();    // 상점 화면 즉시 갱신
-    } 
-}
+            let target = titleData.find(x => x.id === id) || potionData.find(x => x.id === id);
+            if(target) { target.onSale = !target.onSale; saveData(); } 
+        } 
 
         function showMain() { currentIdx = null; document.getElementById('mainPage').style.display='block'; document.getElementById('detailPage').style.display='none'; document.getElementById('shopPage').style.display='none'; } 
         function editNum(e, i) { e.stopPropagation(); const n = prompt("새 번호", students[i].num); if(n) { students[i].num = parseInt(n); saveData(); } } 
