@@ -542,6 +542,8 @@ if (s.titles && s.titles.length > 0) {
             s.money -= t.price; 
             s.myTitles.push(t); 
             
+            // 능력치 상승 효과 적용 및 메시지 구성
+            let statMsg = "";
             if(['t1', 't2', 't3', 't10', 's6', 's8', 's9'].includes(t.id)) {
                 let bonus = 5; 
                 if (t.id === 't1') bonus = 1;
@@ -549,15 +551,29 @@ if (s.titles && s.titles.length > 0) {
                 else if (t.id === 't10') bonus = 20;
                 else if (t.id === 's6') bonus = 7;
                 Object.keys(s.stats).forEach(k => { s.stats[k] = Math.min(100, s.stats[k] + bonus); });
+                statMsg = `모든 능력치가 +${bonus} 상승했습니다!`;
             } 
-            else if(t.id === 't4') { Object.keys(s.stats).forEach(k => s.stats[k] = 100); } 
+            else if(t.id === 't4') { 
+                Object.keys(s.stats).forEach(k => s.stats[k] = 100); 
+                statMsg = `모든 능력치가 100이 되었습니다!`;
+            } 
             else if(['t5', 't6', 't7', 't8', 't9'].includes(t.id)) {
                 const mapping = { 't5': '지력', 't6': '체력', 't7': '창의성', 't8': '정신력', 't9': '인성' };
                 const statKey = mapping[t.id];
-                if(statKey) s.stats[statKey] = Math.min(100, s.stats[statKey] + 10);
+                if(statKey) {
+                    s.stats[statKey] = Math.min(100, s.stats[statKey] + 10);
+                    statMsg = `${statKey} 능력치가 +10 상승했습니다!`;
+                }
             }
+
+            // 데이터 저장
             saveData(); 
-            alert(`[${t.name}] 구매 완료!`); 
+            
+            // 팝업 알림
+            alert(`🎉 [${t.name}] 칭호 구매 완료!\n${statMsg}`); 
+            
+            // [핵심] 상점 화면을 즉시 갱신하여 '보유중'으로 표시
+            renderShopItems();
             checkAutoTitles(currentIdx); 
         }
 
@@ -567,10 +583,16 @@ if (s.titles && s.titles.length > 0) {
             if(s.money < p.price) return alert("돈 부족"); 
             s.money -= p.price; 
             s.stats[p.stat] = Math.min(100, s.stats[p.stat]+1); 
+            
+            // 데이터 저장
             saveData(); 
-            alert(`${p.name} 사용! ${p.stat} +1`);
+            
+            alert(`🧪 ${p.name} 사용! ${p.stat} +1`);
+            
+            // [핵심] 상점 화면을 즉시 갱신하여 차감된 돈 표시
+            renderShopItems();
             checkAutoTitles(currentIdx);
-        } 
+        }
 
      function renderAdminShop() {
     const grid = document.getElementById('adminShopGrid');
