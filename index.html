@@ -579,7 +579,7 @@ function resetToDefault() {
         
         // 상단: 아이콘 + 이름 (이름 크기 확대)
         const namePart = `<div style="display:flex; align-items:center; gap:6px; border-bottom:1px solid #f0f0f0; padding-bottom:6px;">
-                            <span style="font-size:1.2rem; flex-shrink:0;">${item.icon}</span>
+                            <span style="font-size:1.0rem; flex-shrink:0;">${item.icon}</span>
                             <strong style="font-size:1.0rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; color:#333;">${item.name}</strong>
                           </div>`;
         
@@ -590,7 +590,7 @@ function resetToDefault() {
             // 하단: 컨트롤러 (입력창 및 버튼 확대)
             controlHtml = `<div style="display:flex; align-items:center; gap:5px; justify-content:space-between;">
                             <input type="number" id="p-edit-${item.id}" value="${item.price}" 
-                                   style="width:100px; padding:3px; border:1px solid #ccc; border-radius:5px; font-size:12px; height:24px; outline:none;"> 
+                                   style="width:70px; padding:3px; border:1px solid #ccc; border-radius:5px; font-size:12px; height:24px; outline:none;"> 
                             <div style="display:flex; gap:3px; flex:1; justify-content:flex-end;">
                                 <button class="btn" style="padding:0 8px; font-size:11px; white-space:nowrap; height:28px; cursor:pointer; flex:1; max-width:45px;" onclick="editPrice('${item.id}')">수정</button> 
                                 <button class="btn" style="padding:0 8px; font-size:11px; background:${item.onSale ? '#ff4d4d' : '#2ecc71'}; color:white; white-space:nowrap; height:28px; cursor:pointer; flex:1; max-width:45px;" onclick="toggleItem('${item.id}')">
