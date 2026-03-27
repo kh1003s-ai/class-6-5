@@ -415,6 +415,7 @@ function resetToDefault() {
             document.getElementById('detailPage').style.display='block'; 
             document.getElementById('shopPage').style.display='none'; 
             updateUI(); 
+
         } 
 
         function updateUI() { 
@@ -439,6 +440,30 @@ function resetToDefault() {
             document.getElementById('statList').innerHTML = h; 
             document.getElementById('adminStatControls').innerHTML = adminH; 
             document.getElementById('adminPanel').style.display = isAdmin ? 'block' : 'none'; 
+const titleDiv = document.getElementById('detailTitles');
+titleDiv.innerHTML = ''; // 기존에 글자로 쓰여있던 내용을 지웁니다.
+
+if (s.titles && s.titles.length > 0) {
+    s.titles.forEach(tId => {
+        // 기본 칭호(defaultTitles)와 상점 칭호(titleData)를 모두 합쳐서 정보를 찾습니다.
+        const tObj = [...defaultTitles, ...titleData].find(x => x.id === tId);
+        
+        if (tObj) {
+            const span = document.createElement('span');
+            span.innerHTML = tObj.icon; // 이모지 넣기
+            span.style.fontSize = '1.6rem';
+            span.style.marginRight = '8px';
+            span.style.cursor = 'help'; // 마우스 올리면 ? 모양으로 변함
+            
+            // [핵심] 마우스를 올렸을 때 브라우저 툴팁으로 이름 표시
+            span.title = tObj.name; 
+            
+            titleDiv.appendChild(span);
+        }
+    });
+} else {
+    titleDiv.innerHTML = '<span style="color:#bbb; font-size:0.9rem;">획득한 칭호가 없습니다.</span>';
+}
         } 
 
         function toggleAdmin() { 
@@ -547,29 +572,34 @@ function resetToDefault() {
             checkAutoTitles(currentIdx);
         } 
 
-       function renderAdminShop() {
+     function renderAdminShop() {
     const grid = document.getElementById('adminShopGrid');
     if (!grid) return;
+    
+    // [중요] 부모 컨테이너 설정: 테두리를 벗어나지 않게 하고 스크롤바 생성
+    grid.style.width = '100%';
+    grid.style.overflowX = 'auto'; // 내용이 넘치면 가로 스크롤바 생성
+    grid.style.paddingBottom = '10px'; // 스크롤바와 내용 사이 여백
     grid.innerHTML = ''; 
 
-    // 전체 컨테이너: 좌우 여백 없이 꽉 채움
     const wrapper = document.createElement('div');
     wrapper.style.display = 'flex';
     wrapper.style.flexDirection = 'column';
     wrapper.style.gap = '25px';
+    
+    // [중요] 최소 너비 설정: 화면이 작아져도 5열 형태를 유지하며 스크롤되게 함
+    wrapper.style.minWidth = '850px'; 
     wrapper.style.width = '100%';
     wrapper.style.boxSizing = 'border-box';
 
-    // 개별 아이템 카드 생성 함수 (확대 버전)
     const createCard = (item) => {
         const card = document.createElement('div');
         card.className = `admin-item-card ${(!item.onSale && !item.isAuto) ? 'off-item' : ''}`;
         
-        // 카드 스타일: 5열 배열에서 칸을 꽉 채우도록 확대
         card.style.display = 'flex';
         card.style.flexDirection = 'column';
         card.style.border = '1px solid #ffcfcf';
-        card.style.padding = '10px 8px'; // 상하좌우 패딩 확대
+        card.style.padding = '10px 8px';
         card.style.borderRadius = '12px';
         card.style.background = '#fff';
         card.style.gap = '8px';
@@ -577,7 +607,6 @@ function resetToDefault() {
         card.style.width = '100%'; 
         card.style.boxShadow = '0 2px 5px rgba(0,0,0,0.02)';
         
-        // 상단: 아이콘 + 이름 (이름 크기 확대)
         const namePart = `<div style="display:flex; align-items:center; gap:6px; border-bottom:1px solid #f0f0f0; padding-bottom:6px;">
                             <span style="font-size:1.0rem; flex-shrink:0;">${item.icon}</span>
                             <strong style="font-size:1.0rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; color:#333;">${item.name}</strong>
@@ -587,13 +616,12 @@ function resetToDefault() {
         if (item.isAuto) {
             controlHtml = `<div style="color:#4a90e2; font-size:11px; font-weight:bold; text-align:center; padding:5px 0;">[자동 지급 아이템]</div>`;
         } else {
-            // 하단: 컨트롤러 (입력창 및 버튼 확대)
             controlHtml = `<div style="display:flex; align-items:center; gap:5px; justify-content:space-between;">
                             <input type="number" id="p-edit-${item.id}" value="${item.price}" 
-                                   style="width:70px; padding:3px; border:1px solid #ccc; border-radius:5px; font-size:12px; height:24px; outline:none;"> 
+                                   style="width:100px; padding:3px; border:1px solid #ccc; border-radius:5px; font-size:12px; height:24px; outline:none;"> 
                             <div style="display:flex; gap:3px; flex:1; justify-content:flex-end;">
                                 <button class="btn" style="padding:0 8px; font-size:11px; white-space:nowrap; height:28px; cursor:pointer; flex:1; max-width:45px;" onclick="editPrice('${item.id}')">수정</button> 
-                                <button class="btn" style="padding:0 8px; font-size:11px; background:${item.onSale ? '#ff4d4d' : '#2ecc71'}; color:white; white-space:nowrap; height:28px; cursor:pointer; flex:1; max-width:45px;" onclick="toggleItem('${item.id}')">
+                                <button class="btn" style="padding:0 6px; font-size:11px; background:${item.onSale ? '#ff4d4d' : '#2ecc71'}; color:white; white-space:nowrap; height:28px; cursor:pointer; flex:1; max-width:45px;" onclick="toggleItem('${item.id}')">
                                     ${item.onSale ? '품절' : '판매'}
                                 </button>
                             </div>
@@ -604,7 +632,6 @@ function resetToDefault() {
         return card;
     };
 
-    // 섹션 생성 (5열 그리드 최적화)
     const createSection = (title, data, color) => {
         const sec = document.createElement('div');
         sec.style.width = '100%';
@@ -612,7 +639,6 @@ function resetToDefault() {
         
         const g = document.createElement('div');
         g.style.display = 'grid';
-        // 5열 배치, 간격을 12px로 넓혀서 좌우를 꽉 채움
         g.style.gridTemplateColumns = 'repeat(5, 1fr)'; 
         g.style.gap = '12px';
         g.style.width = '100%';
