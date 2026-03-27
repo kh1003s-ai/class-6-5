@@ -45,8 +45,29 @@
         .edit-btn { font-size: 10px; color: #aaa; text-decoration: underline; cursor: pointer; } 
         .edit-btn:hover { color: var(--admin-red); } 
         .admin-shop-manager { display: none; margin-top: 30px; background: #fff; padding: 25px; border-radius: 20px; border: 2px solid var(--admin-red); } 
+.admin-shop-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 칭호와 포션을 좌우로 나눔 */
+    gap: 20px;
+}
+.admin-category-box {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #eee;
+}
         .admin-shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 15px; } 
-        .admin-item-card { border: 1px solid #eee; padding: 10px; border-radius: 10px; font-size: 12px; } 
+       .admin-item-card {
+    background: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    transition: all 0.2s;
+}
         .admin-item-card input { width: 60px; padding: 3px; } 
         .off-item { opacity: 0.5; background: #f9f9f9; } 
         #detailPage, #shopPage { display: none; max-width: 900px; margin: 20px auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); } 
@@ -513,34 +534,122 @@ function resetToDefault() {
             checkAutoTitles(currentIdx);
         } 
 
-        function renderAdminShop() { 
-    const grid = document.getElementById('adminShopGrid'); 
-    if(!grid) return;
+       function renderAdminShop() {
+    const grid = document.getElementById('adminShopGrid');
+    if (!grid) return;
     grid.innerHTML = ''; 
-    
-    // DB 데이터와 기본 데이터(자동칭호 포함)를 합치거나, 
-    // 기본 데이터(defaultTitles)를 기준으로 현재 상태를 표시합니다.
-    const allTitles = defaultTitles; // 자동 칭호가 포함된 원본 리스트 사용
-    const combinedData = [...allTitles, ...potionData];
 
-    combinedData.forEach((item) => { 
-        const card = document.createElement('div'); 
-        // 자동 지급 칭호와 판매 중지된 아이템 구분 스타일
-        card.className = `admin-item-card ${(!item.onSale && !item.isAuto) ? 'off-item' : ''}`; 
+    // 전체 컨테이너: 좌우 여백 없이 꽉 채움
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'flex';
+    wrapper.style.flexDirection = 'column';
+    wrapper.style.gap = '25px';
+    wrapper.style.width = '100%';
+    wrapper.style.boxSizing = 'border-box';
+
+    // 개별 아이템 카드 생성 함수 (확대 버전)
+    const createCard = (item) => {
+        const card = document.createElement('div');
+        card.className = `admin-item-card ${(!item.onSale && !item.isAuto) ? 'off-item' : ''}`;
+        
+        // 카드 스타일: 5열 배열에서 칸을 꽉 채우도록 확대
+        card.style.display = 'flex';
+        card.style.flexDirection = 'column';
+        card.style.border = '1px solid #ffcfcf';
+        card.style.padding = '10px 8px'; // 상하좌우 패딩 확대
+        card.style.borderRadius = '12px';
+        card.style.background = '#fff';
+        card.style.gap = '8px';
+        card.style.boxSizing = 'border-box';
+        card.style.width = '100%'; 
+        card.style.boxShadow = '0 2px 5px rgba(0,0,0,0.02)';
+        
+        // 상단: 아이콘 + 이름 (이름 크기 확대)
+        const namePart = `<div style="display:flex; align-items:center; gap:6px; border-bottom:1px solid #f0f0f0; padding-bottom:6px;">
+                            <span style="font-size:1.2rem; flex-shrink:0;">${item.icon}</span>
+                            <strong style="font-size:1.0rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; color:#333;">${item.name}</strong>
+                          </div>`;
         
         let controlHtml = '';
         if (item.isAuto) {
-            controlHtml = `<span style="color:blue; font-weight:bold;">[자동지급 조건부 칭호]</span><br>
-                           <small style="color:#888;">조건 충족 시 자동 부여됨</small>`;
+            controlHtml = `<div style="color:#4a90e2; font-size:11px; font-weight:bold; text-align:center; padding:5px 0;">[자동 지급 아이템]</div>`;
         } else {
-            controlHtml = `가격: <input type="number" id="p-edit-${item.id}" value="${item.price}" style="width:70px"> 
-                           <button onclick="editPrice('${item.id}')">수정</button> 
-                           <button onclick="toggleItem('${item.id}')">${item.onSale ? '품절처리' : '판매개시'}</button>`;
+            // 하단: 컨트롤러 (입력창 및 버튼 확대)
+            controlHtml = `<div style="display:flex; align-items:center; gap:5px; justify-content:space-between;">
+                            <input type="number" id="p-edit-${item.id}" value="${item.price}" 
+                                   style="width:100px; padding:3px; border:1px solid #ccc; border-radius:5px; font-size:12px; height:24px; outline:none;"> 
+                            <div style="display:flex; gap:3px; flex:1; justify-content:flex-end;">
+                                <button class="btn" style="padding:0 8px; font-size:11px; white-space:nowrap; height:28px; cursor:pointer; flex:1; max-width:45px;" onclick="editPrice('${item.id}')">수정</button> 
+                                <button class="btn" style="padding:0 8px; font-size:11px; background:${item.onSale ? '#ff4d4d' : '#2ecc71'}; color:white; white-space:nowrap; height:28px; cursor:pointer; flex:1; max-width:45px;" onclick="toggleItem('${item.id}')">
+                                    ${item.onSale ? '품절' : '판매'}
+                                </button>
+                            </div>
+                           </div>`;
         }
+        
+        card.innerHTML = `${namePart}${controlHtml}`;
+        return card;
+    };
 
-        card.innerHTML = `<b>${item.icon} ${item.name}</b><br>${controlHtml}`; 
-        grid.appendChild(card); 
-    }); 
+    // 섹션 생성 (5열 그리드 최적화)
+    const createSection = (title, data, color) => {
+        const sec = document.createElement('div');
+        sec.style.width = '100%';
+        sec.innerHTML = `<h4 style="margin:0 0 12px 0; color:${color}; font-size:1.1rem; border-left:5px solid ${color}; padding-left:12px;">${title}</h4>`;
+        
+        const g = document.createElement('div');
+        g.style.display = 'grid';
+        // 5열 배치, 간격을 12px로 넓혀서 좌우를 꽉 채움
+        g.style.gridTemplateColumns = 'repeat(5, 1fr)'; 
+        g.style.gap = '12px';
+        g.style.width = '100%';
+        
+        data.forEach(item => g.appendChild(createCard(item)));
+        sec.appendChild(g);
+        return sec;
+    };
+
+    wrapper.appendChild(createSection('🎖️ 칭호 실시간 관리', titleData, 'var(--main-blue)'));
+    wrapper.appendChild(createSection('🧪 포션 실시간 관리', potionData, 'var(--purple)'));
+
+    grid.appendChild(wrapper);
+}
+
+// 2. 가격 수정 (input 값 읽기 방식 개선)
+function editPrice(id) {
+    if (!isAdmin) return;
+    
+    // input 엘리먼트를 직접 찾아 값을 가져옴
+    const inputEl = document.getElementById(`p-edit-${id}`);
+    if (!inputEl) return;
+    
+    const newPrice = parseInt(inputEl.value);
+    if (isNaN(newPrice) || newPrice < 0) {
+        alert("올바른 가격을 입력해주세요.");
+        return;
+    }
+
+    // 데이터 업데이트
+    let target = titleData.find(x => x.id === id) || potionData.find(x => x.id === id);
+    if (target) {
+        target.price = newPrice;
+        saveData(); // 서버 저장
+        alert(`[${target.name}] 가격이 ${newPrice.toLocaleString()}원으로 수정되었습니다.`);
+        renderAdminShop(); // 관리자 화면 갱신
+        if(currentIdx !== null) renderShopItems(); // 열려있는 상점창 갱신
+    }
+}
+
+// 3. 품절/판매 토글
+function toggleItem(id) {
+    if (!isAdmin) return;
+    let target = titleData.find(x => x.id === id) || potionData.find(x => x.id === id);
+    if (target) {
+        target.onSale = !target.onSale;
+        saveData();
+        renderAdminShop();
+        if(currentIdx !== null) renderShopItems();
+    }
 }
 
         function editPrice(id) { 
