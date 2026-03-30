@@ -219,51 +219,78 @@
             { id: 'p5', name: '인성 포션', icon: '🍀', stat: '인성', price: 500, onSale: true } 
         ]; 
 
-        // 3. Firebase 실시간 동기화 
-        function saveData() {  
-            const noticeVal = document.getElementById('noticeContent').innerText; 
-            db.ref('class65_root').set({ 
-                students, 
-                noticeText: noticeVal, 
-                titleData, 
-                potionData 
-            }); 
-        } 
+       function saveData() {
+    if (!db) return; // DB 연결 확인
+    
+    // 공지사항 내용 가져오기
+    const noticeElem = document.getElementById('noticeContent');
+    const noticeVal = noticeElem ? (noticeElem.tagName === 'INPUT' || noticeElem.tagName === 'TEXTAREA' ? noticeElem.value : noticeElem.innerText) : "";
 
-        function initRealtimeSync() { 
+    // Firebase에 전체 데이터 저장 (students와 함께 titleData도 서버로 전송)
+    db.ref('class65_root').set({
+        students: students,
+        noticeText: noticeVal,
+        titleData: titleData,
+        potionData: potionData
+    });
+}
+
+       function initRealtimeSync() { 
     db.ref('class65_root').on('value', (snapshot) => { 
         const data = snapshot.val(); 
         if (data) { 
+            // 1. 학생 데이터 동기화
             students = data.students || []; 
-            // 서버에 데이터가 존재하면 기본값 대신 서버 데이터를 할당
-            titleData = (data.titleData && data.titleData.length > 0) ? data.titleData : [...defaultTitles]; 
-            potionData = (data.potionData && data.potionData.length > 0) ? data.potionData : [...defaultPotions]; 
+
+            // 2. [핵심] 칭호 및 포션 데이터 실시간 동기화
+            // 서버에 데이터가 있으면 서버 데이터를 쓰고, 없으면 기본 배열을 할당합니다.
+            if (data.titleData && data.titleData.length > 0) {
+                titleData = data.titleData; 
+            } else if (typeof defaultTitles !== 'undefined') {
+                titleData = [...defaultTitles];
+            }
+
+            if (data.potionData && data.potionData.length > 0) {
+                potionData = data.potionData;
+            } else if (typeof defaultPotions !== 'undefined') {
+                potionData = [...defaultPotions];
+            }
+
+            // 3. 공지사항 동기화
             noticeText = data.noticeText || "반갑습니다! 공지사항을 입력하세요."; 
-            
-            if (!isAdmin) { 
-                document.getElementById('noticeContent').innerText = noticeText; 
+            const noticeElem = document.getElementById('noticeContent');
+            if (noticeElem && !isAdmin) { 
+                noticeElem.innerText = noticeText; 
             } 
             
-            renderGrid(); 
-            if (currentIdx !== null) updateUI(); 
-            if (document.getElementById('shopPage').style.display === 'block') renderShopItems(); 
-            if (isAdmin) renderAdminShop(); 
+            // 4. 모든 화면 실시간 갱신
+            // 메인 리스트 갱신
+            if (typeof renderGrid === 'function') renderGrid(); 
+            if (typeof renderStudents === 'function') renderStudents(); 
+
+            // 상세 페이지가 열려있다면 정보 갱신
+            if (currentIdx !== null) {
+                if (typeof updateUI === 'function') updateUI();
+                if (typeof showDetail === 'function') showDetail(currentIdx);
+            }
+
+            // 상점 페이지가 열려있다면 상점 아이템 갱신
+            if (document.getElementById('shopPage') && document.getElementById('shopPage').style.display === 'block') {
+                if (typeof renderShopItems === 'function') renderShopItems();
+            }
+
+            // 관리자 모드라면 관리자 상점 관리 화면 갱신
+            if (isAdmin && typeof renderAdminShop === 'function') {
+                renderAdminShop(); 
+            }
+
         } else { 
-            // 서버에 아예 데이터가 없는 생초기 상태일 때만 실행
-            resetToDefault(); 
+            // 서버에 아예 데이터가 없는 완전 초기 상태일 때만 실행
+            if (typeof resetToDefault === 'function') resetToDefault(); 
         } 
     });
 }
 
-function saveData() {  
-    const noticeVal = document.getElementById('noticeContent').innerText;
-    db.ref('class65_root').set({ 
-        students: students, 
-        noticeText: noticeVal, 
-        titleData: titleData,  // 수정된 가격 정보 포함
-        potionData: potionData // 수정된 포션 정보 포함
-    }); 
-}
 
 function resetToDefault() { 
     students = defaultStudents.map(s => ({ 
