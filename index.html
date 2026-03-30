@@ -547,6 +547,7 @@ if (s.titles && s.titles.length > 0) {
             if(['t1', 't2', 't3', 't10', 's6', 's8', 's9'].includes(t.id)) {
                 let bonus = 5; 
                 if (t.id === 't1') bonus = 1;
+                else if (t.id === 't2') bonus = 5;
                 else if (t.id === 't3') bonus = 10;
                 else if (t.id === 't10') bonus = 20;
                 else if (t.id === 's6') bonus = 7;
