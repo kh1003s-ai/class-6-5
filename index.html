@@ -220,17 +220,15 @@
         ]; 
 
        function saveData() {
-    if (!db) return; // DB 연결 확인
+    if (!db) return;
     
-    // 공지사항 내용 가져오기
     const noticeElem = document.getElementById('noticeContent');
     const noticeVal = noticeElem ? (noticeElem.tagName === 'INPUT' || noticeElem.tagName === 'TEXTAREA' ? noticeElem.value : noticeElem.innerText) : "";
 
-    // Firebase에 전체 데이터 저장 (students와 함께 titleData도 서버로 전송)
     db.ref('class65_root').set({
         students: students,
         noticeText: noticeVal,
-        titleData: titleData,
+        titleData: titleData, // 이 부분이 추가/수정되어야 합니다.
         potionData: potionData
     });
 }
@@ -239,83 +237,62 @@
     db.ref('class65_root').on('value', (snapshot) => { 
         const data = snapshot.val(); 
         if (data) { 
-            // 1. 학생 데이터 동기화
             students = data.students || []; 
-
-            // 2. [핵심] 칭호 및 포션 데이터 실시간 동기화
-            // 서버에 데이터가 있으면 서버 데이터를 쓰고, 없으면 기본 배열을 할당합니다.
+            
+            // 서버에 titleData가 있으면 가져오고, 없으면 코드에 적힌 기본값을 씁니다.
             if (data.titleData && data.titleData.length > 0) {
                 titleData = data.titleData; 
-            } else if (typeof defaultTitles !== 'undefined') {
+            } else {
                 titleData = [...defaultTitles];
             }
 
-            if (data.potionData && data.potionData.length > 0) {
-                potionData = data.potionData;
-            } else if (typeof defaultPotions !== 'undefined') {
-                potionData = [...defaultPotions];
-            }
-
-            // 3. 공지사항 동기화
+            potionData = (data.potionData && data.potionData.length > 0) ? data.potionData : [...defaultPotions]; 
             noticeText = data.noticeText || "반갑습니다! 공지사항을 입력하세요."; 
-            const noticeElem = document.getElementById('noticeContent');
-            if (noticeElem && !isAdmin) { 
-                noticeElem.innerText = noticeText; 
+            
+            if (!isAdmin) { 
+                const noticeElem = document.getElementById('noticeContent');
+                if(noticeElem) noticeElem.innerText = noticeText; 
             } 
             
-            // 4. 모든 화면 실시간 갱신
-            // 메인 리스트 갱신
-            if (typeof renderGrid === 'function') renderGrid(); 
-            if (typeof renderStudents === 'function') renderStudents(); 
-
-            // 상세 페이지가 열려있다면 정보 갱신
-            if (currentIdx !== null) {
-                if (typeof updateUI === 'function') updateUI();
-                if (typeof showDetail === 'function') showDetail(currentIdx);
-            }
-
-            // 상점 페이지가 열려있다면 상점 아이템 갱신
-            if (document.getElementById('shopPage') && document.getElementById('shopPage').style.display === 'block') {
-                if (typeof renderShopItems === 'function') renderShopItems();
-            }
-
-            // 관리자 모드라면 관리자 상점 관리 화면 갱신
-            if (isAdmin && typeof renderAdminShop === 'function') {
-                renderAdminShop(); 
-            }
-
+            renderGrid(); 
+            if (currentIdx !== null) updateUI(); 
+            if (document.getElementById('shopPage').style.display === 'block') renderShopItems(); 
+            if (isAdmin) renderAdminShop(); 
         } else { 
-            // 서버에 아예 데이터가 없는 완전 초기 상태일 때만 실행
-            if (typeof resetToDefault === 'function') resetToDefault(); 
+            resetToDefault(); 
         } 
     });
 }
 
+function resetToDefault() {
+    // 1. 학생 데이터 초기화 (25명 생성)
+    students = Array.from({ length: 25 }, (_, i) => ({
+        id: Date.now() + i,
+        num: i + 1,
+        name: (i === 24) ? "선생님" : `${i + 1}번 학생`,
+        money: 10000,
+        donation: 0,
+        // 스탯 명칭은 '인성'으로 통일 (상점/UI와 일치시키기 위함)
+        stats: { "체력": 5, "지력": 5, "창의성": 5, "정신력": 5, "인성": 5 },
+        myTitles: [],
+        currentTitle: null,
+        items: {},
+        pw: null // 초기 비밀번호 없음
+    }));
 
-function resetToDefault() { 
-    students = defaultStudents.map(s => ({ 
-        ...s, money: 10000, donation: 0, 
-        stats: { "체력": 5, "지력": 5, "창의성": 5, "정신력": 5, "사회성": 5 }, 
-        myTitles: [], currentTitle: null, items: {} 
-    })); 
-    titleData = [...defaultTitles]; 
-    potionData = [...defaultPotions]; 
-    saveData(); 
+    // 2. 칭호 및 포션 데이터를 기본값(defaultTitles)으로 초기화
+    // 단순히 할당하지 않고 복사([...])를 사용하여 원본 배열 보존
+    titleData = [...defaultTitles];
+    potionData = [...defaultPotions];
+    noticeText = "반갑습니다! 즐거운 학교생활 되세요.";
+
+    // 3. 서버(Firebase)에 즉시 저장
+    saveData();
+
+    // 4. 사용자 알림
     alert("전체 데이터가 기본값으로 초기화되었습니다.");
 }
 
-        function resetToDefault() { 
-            students = Array.from({length: 25}, (_, i) => ({ 
-                id: Date.now() + i, 
-                num: i + 1, name: (i === 24) ? "선생님" : `${i+1}번 학생`, money: 10000, donation: 0, 
-                stats: { "체력": 5, "지력": 5, "창의성": 5, "정신력": 5, "인성": 5 }, 
-                myTitles: [], pw: null 
-            })); 
-            titleData = defaultTitles; 
-            potionData = defaultPotions; 
-            noticeText = "반갑습니다!"; 
-            saveData(); 
-        } 
 
         // 4. UI 렌더링 및 이벤트 로직 
        function renderGrid() { 
